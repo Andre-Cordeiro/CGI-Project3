@@ -196,9 +196,9 @@ function setup(shaders)
     //dividir a ilumnicao por 255 no shader
     let position = {
         pos: vec3(0,1,0),
-        //ambient: ,
-        //diffuse:
-        //specular:
+        ambient: vec3(75,75,75),
+        diffuse: vec3(175,175,175),
+        specular: vec3(255,255,255),
         directional: false,
         active: true,
     }
@@ -218,28 +218,33 @@ function setup(shaders)
     })
 
     const eyeGUI = gui.addFolder("Eye")
-    eyeGUI.add(camera.eye, 0).step(0.05).listen()
-    eyeGUI.add(camera.eye, 1).step(0.05).listen()
-    eyeGUI.add(camera.eye, 2).step(0.05).listen()
+    eyeGUI.add(camera.eye, 0).name("x").step(0.05).listen()
+    eyeGUI.add(camera.eye, 1).name("y").step(0.05).listen()
+    eyeGUI.add(camera.eye, 2).name("z").step(0.05).listen()
 
     const atGUI = gui.addFolder("At")
-    atGUI.add(camera.at, 0).step(0.05).listen()
-    atGUI.add(camera.at, 1).step(0.05).listen()
-    atGUI.add(camera.at, 2).step(0.05).listen()
+    atGUI.add(camera.at, 0).name("x").step(0.05).listen()
+    atGUI.add(camera.at, 1).name("y").step(0.05).listen()
+    atGUI.add(camera.at, 2).name("z").step(0.05).listen()
 
     const upGUI = gui.addFolder("Up")
-    upGUI.add(camera.up, 0).step(0.05).listen()
-    upGUI.add(camera.up, 1).step(0.05).listen()
-    upGUI.add(camera.up, 2).step(0.05).listen()
+    upGUI.add(camera.up, 0).name("x").step(0.05).listen()
+    upGUI.add(camera.up, 1).name("y").step(0.05).listen()
+    upGUI.add(camera.up, 2).name("z").step(0.05).listen()
 
+
+    //Code for every added Light!
     const lightGUI = gui.addFolder("Light")
     const positionGUI = lightGUI.addFolder("position")
     positionGUI.add(position.pos, 0).name("x").listen()
     positionGUI.add(position.pos, 1).name("y").listen()
     positionGUI.add(position.pos, 2).name("z").listen()
-    positionGUI.addColor(position.ambient, )
-    positionGUI.add(position.directional)
-    positionGUI.add(position.active)
+    positionGUI.addColor(position, "ambient")
+    positionGUI.addColor(position, "diffuse")
+    positionGUI.addColor(position, "specular")
+    positionGUI.add(position, "directional")
+    positionGUI.add(position, "active")
+
     
 
 
