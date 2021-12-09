@@ -33,6 +33,8 @@ const profileViewComm = '3';
 const axonometricViewComm = '4';
 const backViewComm = '5';
 
+
+
 //Camera Views
 const frontView = lookAt([0.5,0,0], [0,0,0], [1,1,0]); //Camera's front view
 const backView = lookAt([-0.5,0,0], [0,0,0], [1,1,0]); //Camera's back view
@@ -170,8 +172,9 @@ function setup(shaders)
 
 
     let options = {
-        wireframe: false,
-        normals: true
+        "backface culling": true,
+        "depth test": true,
+        "show lights": true
     }
 
     let camera = {
@@ -179,18 +182,26 @@ function setup(shaders)
         at: vec3(0,0,0),
         up: vec3(0,1,0),
         fovy: 45,
-        aspect: 1,
         near: 0.1,
         far: 20,
     }
 
+    let position = {
+        pos: vec3(0,1,0),
+        //ambient:
+        //diffuse:
+        //specular:
+        directional: false,
+        active: true,
+    }
+
     const optionsGUI = gui.addFolder("Options");
-    optionsGUI.add(options, "wireframe")
-    optionsGUI.add(options, "normals")
+    optionsGUI.add(options, "backface culling")
+    optionsGUI.add(options, "depth test")
+    optionsGUI.add(options, "show lights")
 
     const cameraGUI = gui.addFolder("Camera")
     cameraGUI.add(camera, "fovy").min(1).max(100).step(1).listen()
-    cameraGUI.add(camera, "aspect").min(0).max(10).listen()
     cameraGUI.add(camera, "near").min(0.1).max(20).listen().onChange( function (x) {
         camera.near = Math.min(camera.far-0.5,x)
     })
@@ -213,6 +224,13 @@ function setup(shaders)
     upGUI.add(camera.up, 1).step(0.05).listen()
     upGUI.add(camera.up, 2).step(0.05).listen()
 
+    const lightGUI = gui.addFolder("Light")
+    const positionGUI = lightGUI.addFolder("position")
+    positionGUI.add(position.pos, "x")
+    positionGUI.add(position.pos, "y")
+    positionGUI.add(position.pos, "z")
+    positionGUI.add(position.directional)
+    positionGUI.add(position.active)
     
 
 
