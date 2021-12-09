@@ -44,7 +44,14 @@ const axonometricView = lookAt([3,3,3], [0,0,0], [1,2,1]); // Camera's axonometr
 
 let view = axonometricView; //Camera's first view
 
+//First colors
+const dark = 76;
+const medium = 175;
+const ligher = 255;
 
+var palette = {
+
+}
 
 function setup(shaders)
 {
@@ -186,9 +193,10 @@ function setup(shaders)
         far: 20,
     }
 
+    //dividir a ilumnicao por 255 no shader
     let position = {
         pos: vec3(0,1,0),
-        //ambient:
+        //ambient: ,
         //diffuse:
         //specular:
         directional: false,
@@ -226,9 +234,10 @@ function setup(shaders)
 
     const lightGUI = gui.addFolder("Light")
     const positionGUI = lightGUI.addFolder("position")
-    positionGUI.add(position.pos, "x")
-    positionGUI.add(position.pos, "y")
-    positionGUI.add(position.pos, "z")
+    positionGUI.add(position.pos, 0).name("x").listen()
+    positionGUI.add(position.pos, 1).name("y").listen()
+    positionGUI.add(position.pos, 2).name("z").listen()
+    positionGUI.addColor(position.ambient, )
     positionGUI.add(position.directional)
     positionGUI.add(position.active)
     
