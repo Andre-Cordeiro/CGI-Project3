@@ -234,7 +234,9 @@ function setup(shaders)
 
 
     //Code for every added Light!
-    const lightGUI = gui.addFolder("Light")
+    const lights = gui.addFolder("Lights")
+    //Added 1 light to test!
+    const lightGUI = lights.addFolder("Light1")
     const positionGUI = lightGUI.addFolder("position")
     positionGUI.add(position.pos, 0).name("x").listen()
     positionGUI.add(position.pos, 1).name("y").listen()
