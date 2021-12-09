@@ -27,11 +27,6 @@ const rizeBazuka ='w';
 const lowerBazuka = 's';
 const wireView = 'W';
 const meshView = 'S';
-const rotLeftBazuka = 'a';
-const rotRightBazuka = 'd'
-const shootProjectile = ' ';
-const moveTankForward = 'ArrowUp';
-const moveTankBackwards = 'ArrowDown';
 const frontViewComm = '1';
 const topViewComm = '2';
 const profileViewComm = '3';
@@ -102,32 +97,6 @@ function setup(shaders)
 
             case meshView:
                 mode = gl.TRIANGLES;
-                break;
-
-            case rotLeftBazuka:
-                movementHead+= +0.5;
-                break;
-                
-            case rotRightBazuka:
-                movementHead+= -0.5;
-                break;
-
-            case shootProjectile:
-                bullet = true;
-                bulletPos1 = movementHead;
-                bulletPos2 = bazukaAngle;
-                time = new Date().getTime();
-                break;
-
-            case moveTankForward:
-                movementTank+= 0.03;
-                movementWheels+=1;
-                break;
-
-            case moveTankBackwards:
-                movementTank-= 0.03;
-
-                movementWheels-=1;
                 break;
 
             case frontViewComm:
@@ -243,6 +212,8 @@ function setup(shaders)
     upGUI.add(camera.up, 0).step(0.05).listen()
     upGUI.add(camera.up, 1).step(0.05).listen()
     upGUI.add(camera.up, 2).step(0.05).listen()
+
+    
 
 
     function render()
