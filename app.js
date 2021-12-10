@@ -14,20 +14,23 @@ import * as TORUS from '../../libs/torus.js';
 
 /** @type WebGLRenderingContext */
 let gl;
-let time = 0;
 let mode;      
 let animation = true;
 let VP_DISTANCE = 5;
+
+var mModelLoc;
+var mView, mProjection;
+var mViewLoc, mProjectionLoc;
+var mNormals, mViewNormals;
+var mNormalsLoc, mViewNormalsLoc;
 
 //Interfaces
 const gui = new dat.GUI();
 const gui2 = new dat.GUI();
 
-//Commands
+/**Commands
 const moreZoom = '+';
 const lessZoom = '-';
-const rizeBazuka ='w';
-const lowerBazuka = 's';
 const wireView = 'W';
 const meshView = 'S';
 const frontViewComm = '1';
@@ -35,7 +38,7 @@ const topViewComm = '2';
 const profileViewComm = '3';
 const axonometricViewComm = '4';
 const backViewComm = '5';
-
+*/
 
 
 //Camera Views
@@ -45,16 +48,30 @@ const topView  = lookAt([0,1,0], [0,0,0], [1,1,0]);    //Camera's top view
 const profileView = lookAt([0,0,0], [0,0,0], [1,1,0]); //Camera's profile view
 const axonometricView = lookAt([3,3,3], [0,0,0], [1,2,1]); // Camera's axonometric view
 
-let view = axonometricView; //Camera's first view
+//let view = topView;
+//let view = axonometricView;
+//let view = frontView; //Camera's first view
+let view = profileView;
 
-//First colors
-const dark = 76;
-const medium = 175;
-const ligher = 255;
 
-var palette = {
+const WIREFRAME = 0;
+const FILLED = 1;
 
-}
+const Z_ON = 1, Z_OFF = 0;
+var zBufferMode = Z_OFF;
+
+const BACK_ON = 1, BACK_OFF = 0;
+var backFaceCullingMode = BACK_OFF;
+
+
+const CUBE_SOLID = "Cube", SPHERE_SOLID = "Sphere", TORUS_SOLID = "Torus", 
+PYRAMID_SOLID = "Pyramid", CYLINDER_SOLID = "Cylinder";
+
+//WF = wireFrame | F = filled
+/**
+var drawFunctions = [[cubeWF, cubeF], [sphereWF, sphereF],
+    [torusWF, torusF], [pyramidWF, pyramidF], [cylinderWF, cylinderF]];
+*/
 
 function setup(shaders)
 {
@@ -72,6 +89,7 @@ function setup(shaders)
     resize_canvas();
     window.addEventListener("resize", resize_canvas);
 
+    /**
     document.onkeydown = function(event) {
         switch(event.key) {
 
@@ -86,22 +104,6 @@ function setup(shaders)
                     VP_DISTANCE++;
                 mProjection = getOrthoValue();
                 break;
-
-            case rizeBazuka:
-                if(bazukaAngle == bazukaAngleMAX)
-                    break;
-                else{
-                    bazukaAngle+=0.5;
-                    break;
-                }
-
-            case lowerBazuka:
-                if(bazukaAngle == bazukaAngleMIN)
-                    break;
-                else{
-                    bazukaAngle-=0.5;
-                    break;
-                }
 
             case wireView:
                 mode = gl.LINES; 
@@ -131,6 +133,7 @@ function setup(shaders)
                 break;
         }
     }
+    */
 
     gl.clearColor(0.5, 0.5, 0.6, 1.0);
     CUBE.init(gl);
@@ -170,13 +173,31 @@ function setup(shaders)
         gl.uniform4fv(colorVar, color);
     }
 
-    function drawCube(){
-        multScale([1,1,1]);
-        multTranslation([0,0,0]);
-
+    function drawFloor(){
+        multScale([3,0.1,3]);
         paint(vec4(1.0,1.0,1.0,1.0));
         uploadModelView();
         CUBE.draw(gl,program,mode);
+    }
+
+    function drawShape(shape){
+        multScale([2,2,2]);
+        multTranslation([0, 1, 0]);
+        paint(vec4(1.0,0.753,0.796,1.0));
+        uploadModelView();
+        switch(shape) {
+            case CUBE_SOLID: CUBE.draw(gl,program,mode)
+            break;
+            case SPHERE_SOLID: SPHERE.draw(gl,program,mode)
+            break;
+            case TORUS_SOLID: TORUS.draw(gl,program,mode)
+            break;
+            case PYRAMID_SOLID: PYRAMID.draw(gl,program,mode)
+            break;
+            case CYLINDER_SOLID: CYLINDER.draw(gl,program,mode)
+            break;
+            default: console.log("Undenifed shape.")
+        }
     }
 
 
@@ -191,7 +212,7 @@ function setup(shaders)
     let options = {
         "backface culling": true,
         "depth test": true,
-        "show lights": true,
+        "show lights": false,
     }
 
     let camera = {
@@ -235,7 +256,7 @@ function setup(shaders)
         camera.near = Math.min(camera.far-0.5,x)
     })
     cameraGUI.add(camera, "far").min(0.1).max(20).listen().onChange( function (x) {
-        camera.far = Math.max(camera.near+0.5, x)
+        camera.far = Math.max(camera.near+0.5,x)
     })
     cameraGUI.open()
 
@@ -280,6 +301,16 @@ function setup(shaders)
         if(animation) {
            
         }
+
+        if(zBufferMode == Z_ON)
+            gl.enable(gl.DEPTH_TEST);
+        else
+            gl.disable(gl.DEPTH_TEST);
+
+        if(backFaceCullingMode == BACK_ON)
+            gl.enable(gl.CULL_FACE);
+        else
+            gl.disable(gl.CULL_FACE);
        
         window.requestAnimationFrame(render);
 
@@ -291,9 +322,16 @@ function setup(shaders)
     
         loadMatrix(view);
 
-        drawCube();
-        
-        
+        pushMatrix()
+        drawFloor();
+        popMatrix()
+
+        pushMatrix()
+        drawShape(gui2Parameters.shapes);
+        popMatrix()
+
+        console.log(options["backface culling"]);
+        console.log(gui2Parameters.shapes);
     }
 }
 
