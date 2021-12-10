@@ -18,7 +18,10 @@ let time = 0;
 let mode;      
 let animation = true;
 let VP_DISTANCE = 5;
+
+//Interfaces
 const gui = new dat.GUI();
+const gui2 = new dat.GUI();
 
 //Commands
 const moreZoom = '+';
@@ -177,11 +180,18 @@ function setup(shaders)
     }
 
 
+    let gui2Parameters = {
+        shapes: "Torus",
+        Ka: vec3(0,25,0),
+        Kd: vec3(0,100,0),
+        Ks: vec3(255,255,255),
+        Shininess: 50
+    }
 
     let options = {
         "backface culling": true,
         "depth test": true,
-        "show lights": true
+        "show lights": true,
     }
 
     let camera = {
@@ -203,10 +213,21 @@ function setup(shaders)
         active: true,
     }
 
+
+    gui2.add(gui2Parameters, "shapes", ["Cube", "Sphere", "Torus", "Pyramid", "Cylinder"]).name("Object");
+    const materialGUI = gui2.addFolder("Material")
+    materialGUI.addColor(gui2Parameters,"Ka")
+    materialGUI.addColor(gui2Parameters,"Kd")
+    materialGUI.addColor(gui2Parameters,"Ks")
+    materialGUI.add(gui2Parameters,"Shininess")
+    materialGUI.open()
+
+
     const optionsGUI = gui.addFolder("Options");
     optionsGUI.add(options, "backface culling")
     optionsGUI.add(options, "depth test")
     optionsGUI.add(options, "show lights")
+    optionsGUI.open()
 
     const cameraGUI = gui.addFolder("Camera")
     cameraGUI.add(camera, "fovy").min(1).max(100).step(1).listen()
@@ -216,21 +237,25 @@ function setup(shaders)
     cameraGUI.add(camera, "far").min(0.1).max(20).listen().onChange( function (x) {
         camera.far = Math.max(camera.near+0.5, x)
     })
+    cameraGUI.open()
 
     const eyeGUI = gui.addFolder("Eye")
     eyeGUI.add(camera.eye, 0).name("x").step(0.05).listen()
     eyeGUI.add(camera.eye, 1).name("y").step(0.05).listen()
     eyeGUI.add(camera.eye, 2).name("z").step(0.05).listen()
+    eyeGUI.open()
 
     const atGUI = gui.addFolder("At")
     atGUI.add(camera.at, 0).name("x").step(0.05).listen()
     atGUI.add(camera.at, 1).name("y").step(0.05).listen()
     atGUI.add(camera.at, 2).name("z").step(0.05).listen()
+    atGUI.open()
 
     const upGUI = gui.addFolder("Up")
     upGUI.add(camera.up, 0).name("x").step(0.05).listen()
     upGUI.add(camera.up, 1).name("y").step(0.05).listen()
     upGUI.add(camera.up, 2).name("z").step(0.05).listen()
+    upGUI.open()
 
 
     //Code for every added Light!
@@ -246,9 +271,9 @@ function setup(shaders)
     positionGUI.addColor(position, "specular")
     positionGUI.add(position, "directional")
     positionGUI.add(position, "active")
-
-    
-
+    lights.open()
+    lightGUI.open()
+    positionGUI.open()
 
     function render()
     {
