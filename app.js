@@ -1,5 +1,5 @@
 import { buildProgramFromSources, loadShadersFromURLS, setupWebGL } from "../../libs/utils.js";
-import { ortho, lookAt, flatten, vec4, mult, rotateZ, inverse, vec3} from "../../libs/MV.js";
+import { ortho, lookAt, flatten, vec4, mult, rotateZ, perspective, vec3} from "../../libs/MV.js";
 import {modelView, loadMatrix, multRotationY, multScale, multTranslation, popMatrix, pushMatrix, multRotationZ, multRotationX} from "../../libs/stack.js";
 
 import * as dat from "../../libs/dat.gui.module.js";
@@ -47,11 +47,14 @@ const backView = lookAt([-0.5,0,0], [0,0,0], [1,1,0]); //Camera's back view
 const topView  = lookAt([0,1,0], [0,0,0], [1,1,0]);    //Camera's top view
 const profileView = lookAt([0,0,0], [0,0,0], [1,1,0]); //Camera's profile view
 const axonometricView = lookAt([3,3,3], [0,0,0], [1,2,1]); // Camera's axonometric view
+const initView = lookAt([0,0,5], [0,0,0], [0,1,0]);
 
 //let view = topView;
 //let view = axonometricView;
 //let view = frontView; //Camera's first view
-let view = profileView;
+let view = initView;
+
+const zoom = 10;
 
 
 const WIREFRAME = 0;
@@ -175,14 +178,15 @@ function setup(shaders)
 
     function drawFloor(){
         multScale([3,0.1,3]);
+        multTranslation([0,-0.6,0]);
         paint(vec4(1.0,1.0,1.0,1.0));
         uploadModelView();
         CUBE.draw(gl,program,mode);
     }
 
     function drawShape(shape){
-        multScale([2,2,2]);
-        multTranslation([0, 1, 0]);
+        multScale([1,1,1]);
+        multTranslation([0, 0.5, 0]);
         paint(vec4(1.0,0.753,0.796,1.0));
         uploadModelView();
         switch(shape) {
@@ -200,6 +204,16 @@ function setup(shaders)
         }
     }
 
+    function updateLookAt(){
+        view = lookAt(camera.eye, camera.at, camera.up);
+    }
+
+    function updateFovy(){
+        //var fovy = 2.0 * Math.atan((3.0/2.0)/(distancePerspective)) * (180.0 / Math.PI);
+
+        mProjection = perspective(camera.fovy*zoom, aspect, camera.near, camera.far);
+        
+    }
 
     let gui2Parameters = {
         shapes: "Torus",
@@ -312,7 +326,11 @@ function setup(shaders)
         else
             gl.disable(gl.CULL_FACE);
        
-        window.requestAnimationFrame(render);
+        //Updates the fovy
+        updateFovy();
+
+        //Updates the eye, at and up
+        updateLookAt();
 
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         
@@ -330,8 +348,10 @@ function setup(shaders)
         drawShape(gui2Parameters.shapes);
         popMatrix()
 
-        console.log(options["backface culling"]);
-        console.log(gui2Parameters.shapes);
+        //console.log(options["backface culling"]);
+        //console.log(gui2Parameters.shapes);
+
+        window.requestAnimationFrame(render);
     }
 }
 
