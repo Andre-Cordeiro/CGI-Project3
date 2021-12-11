@@ -54,7 +54,7 @@ const initView = lookAt([0,0,5], [0,0,0], [0,1,0]);
 //let view = frontView; //Camera's first view
 let view = initView;
 
-const zoom = 10;
+const zoom = 1.5;
 
 
 const WIREFRAME = 0;
@@ -209,10 +209,7 @@ function setup(shaders)
     }
 
     function updateFovy(){
-        //var fovy = 2.0 * Math.atan((3.0/2.0)/(distancePerspective)) * (180.0 / Math.PI);
-
         mProjection = perspective(camera.fovy*zoom, aspect, camera.near, camera.far);
-        
     }
 
     let gui2Parameters = {
@@ -331,6 +328,9 @@ function setup(shaders)
 
         //Updates the eye, at and up
         updateLookAt();
+
+        //Updates the color of the solid object
+        //updateSolidColor();
 
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         
