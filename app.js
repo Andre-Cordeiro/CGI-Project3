@@ -76,6 +76,11 @@ var drawFunctions = [[cubeWF, cubeF], [sphereWF, sphereF],
     [torusWF, torusF], [pyramidWF, pyramidF], [cylinderWF, cylinderF]];
 */
 
+let lights = [];
+let nOfActualLights = 0;
+
+
+
 function setup(shaders)
 {
     let canvas = document.getElementById("gl-canvas");
@@ -204,6 +209,25 @@ function setup(shaders)
         }
     }
 
+    function lighsToAdd(){
+        //Here we add all the lights to our program!
+        if(nOfActualLights < light.nOfLights){
+            for(let i = Number(nOfActualLights) + Number(1); i<=light.nOfLights;i++){
+                const lightGUI = lights.addFolder("Light"+ i)
+                const positionGUI = lightGUI.addFolder("position")
+                positionGUI.add(position.pos, 0).name("x").listen()
+                positionGUI.add(position.pos, 1).name("y").listen()
+                positionGUI.add(position.pos, 2).name("z").listen()
+                positionGUI.addColor(position, "ambient")
+                positionGUI.addColor(position, "diffuse")
+                positionGUI.addColor(position, "specular")
+                positionGUI.add(position, "directional")
+                positionGUI.add(position, "active")
+            }
+            nOfActualLights = light.nOfLights;
+        }
+    }
+
     function updateLookAt(){
         view = lookAt(camera.eye, camera.at, camera.up);
     }
@@ -245,6 +269,15 @@ function setup(shaders)
         active: true,
     }
 
+    let light = {
+        nOfLights: 0,
+        pos: vec3(0,1,0),
+        ambient: vec3(75,75,75),
+        diffuse: vec3(175,175,175),
+        specular: vec3(255,255,255),
+        directional: false,
+        active: true,
+    }
 
     gui2.add(gui2Parameters, "shapes", ["Cube", "Sphere", "Torus", "Pyramid", "Cylinder"]).name("Object");
     const materialGUI = gui2.addFolder("Material")
@@ -292,20 +325,12 @@ function setup(shaders)
 
     //Code for every added Light!
     const lights = gui.addFolder("Lights")
-    //Added 1 light to test!
-    const lightGUI = lights.addFolder("Light1")
-    const positionGUI = lightGUI.addFolder("position")
-    positionGUI.add(position.pos, 0).name("x").listen()
-    positionGUI.add(position.pos, 1).name("y").listen()
-    positionGUI.add(position.pos, 2).name("z").listen()
-    positionGUI.addColor(position, "ambient")
-    positionGUI.addColor(position, "diffuse")
-    positionGUI.addColor(position, "specular")
-    positionGUI.add(position, "directional")
-    positionGUI.add(position, "active")
+    lights.add(light, "nOfLights", ["0","1","2","3","4","5","6","7","8"]).name("NumberLights");
+
+
     lights.open()
-    lightGUI.open()
-    positionGUI.open()
+    //lightGUI.open()
+    //positionGUI.open()
 
     function render()
     {
@@ -331,6 +356,10 @@ function setup(shaders)
 
         //Updates the color of the solid object
         //updateSolidColor();
+
+
+        lighsToAdd();
+        //console.log(light.ambient)
 
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         
