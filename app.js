@@ -28,25 +28,8 @@ var mNormalsLoc, mViewNormalsLoc;
 const gui = new dat.GUI();
 const gui2 = new dat.GUI();
 
-/**Commands
-const moreZoom = '+';
-const lessZoom = '-';
-const wireView = 'W';
-const meshView = 'S';
-const frontViewComm = '1';
-const topViewComm = '2';
-const profileViewComm = '3';
-const axonometricViewComm = '4';
-const backViewComm = '5';
-*/
-
 
 //Camera Views
-const frontView = lookAt([0.5,0,0], [0,0,0], [1,1,0]); //Camera's front view
-const backView = lookAt([-0.5,0,0], [0,0,0], [1,1,0]); //Camera's back view
-const topView  = lookAt([0,1,0], [0,0,0], [1,1,0]);    //Camera's top view
-const profileView = lookAt([0,0,0], [0,0,0], [1,1,0]); //Camera's profile view
-const axonometricView = lookAt([3,3,3], [0,0,0], [1,2,1]); // Camera's axonometric view
 const initView = lookAt([0,0,5], [0,0,0], [0,1,0]);
 
 //let view = topView;
@@ -60,11 +43,9 @@ const zoom = 1.5;
 const WIREFRAME = 0;
 const FILLED = 1;
 
-const Z_ON = 1, Z_OFF = 0;
-var zBufferMode = Z_OFF;
-
-const BACK_ON = 1, BACK_OFF = 0;
-var backFaceCullingMode = BACK_OFF;
+var zBufferMode;
+var backFaceCullingMode;
+var showLightsMode;
 
 
 const CUBE_SOLID = "Cube", SPHERE_SOLID = "Sphere", TORUS_SOLID = "Torus", 
@@ -96,52 +77,6 @@ function setup(shaders)
 
     resize_canvas();
     window.addEventListener("resize", resize_canvas);
-
-    /**
-    document.onkeydown = function(event) {
-        switch(event.key) {
-
-            case moreZoom:
-                if(VP_DISTANCE>3)
-                    VP_DISTANCE--;
-                mProjection = getOrthoValue();
-                break;
-
-            case lessZoom:
-                if(VP_DISTANCE<10)
-                    VP_DISTANCE++;
-                mProjection = getOrthoValue();
-                break;
-
-            case wireView:
-                mode = gl.LINES; 
-                break;
-
-            case meshView:
-                mode = gl.TRIANGLES;
-                break;
-
-            case frontViewComm:
-                view = frontView;
-                break;
-                
-            case topViewComm:
-                view = topView;
-                break;
-
-            case profileViewComm:
-                view = profileView;
-                break;
-
-            case axonometricViewComm:
-                view = axonometricView;
-                break;
-            case backViewComm:
-                view = backView;
-                break;
-        }
-    }
-    */
 
     gl.clearColor(0.5, 0.5, 0.6, 1.0);
     CUBE.init(gl);
@@ -234,6 +169,18 @@ function setup(shaders)
 
     function updateFovy(){
         mProjection = perspective(camera.fovy*zoom, aspect, camera.near, camera.far);
+    }
+
+    function updateBackfaceCulling(){
+        backFaceCullingMode = options["backface culling"];
+    }
+
+    function updateZBuffer(){
+        zBufferMode = options["depth test"];
+    }
+
+    function updateShowLights(){
+        showLightsMode = options["show lights"];
     }
 
     let gui2Parameters = {
@@ -338,15 +285,20 @@ function setup(shaders)
            
         }
 
-        if(zBufferMode == Z_ON)
+        if(zBufferMode)
             gl.enable(gl.DEPTH_TEST);
         else
             gl.disable(gl.DEPTH_TEST);
 
-        if(backFaceCullingMode == BACK_ON)
+        if(backFaceCullingMode)
             gl.enable(gl.CULL_FACE);
         else
             gl.disable(gl.CULL_FACE);
+
+        if(showLightsMode)
+           console.log("apenas para n dar erro") //TODO: FAZER LUZES APARECEREM
+        else
+           console.log("apenas para n dar erro")//TODO : FAZER LUZES DESAPARECEREM
        
         //Updates the fovy
         updateFovy();
@@ -354,12 +306,21 @@ function setup(shaders)
         //Updates the eye, at and up
         updateLookAt();
 
+        //Updates Backface Culling
+        updateBackfaceCulling();
+
+        //Updated ZBuffer
+        updateZBuffer();
+
+        //Update showLights
+        updateShowLights(); //NOT WORKING YET!
+
         //Updates the color of the solid object
         //updateSolidColor();
 
-
+        //Adds Lights to UI
         lighsToAdd();
-        //console.log(light.ambient)
+
 
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         
