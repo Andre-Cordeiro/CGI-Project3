@@ -18,11 +18,11 @@ let mode;
 let animation = true;
 let VP_DISTANCE = 5;
 
-var mModelLoc;
-var mView, mProjection;
-var mViewLoc, mProjectionLoc;
-var mNormals, mViewNormals;
-var mNormalsLoc, mViewNormalsLoc;
+let mModelLoc;
+let mView, mProjection;
+let mViewLoc, mProjectionLoc;
+let mNormals, mViewNormals;
+let mNormalsLoc, mViewNormalsLoc;
 
 //Interfaces
 const gui = new dat.GUI();
