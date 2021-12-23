@@ -124,12 +124,13 @@ function setup(shaders)
         CUBE.draw(gl,program,mode);
     }
 
-    function drawShape(shape){
+    function drawShape(gui2Parameters){
         multScale([1,1,1]);
         multTranslation([0, 0.5, 0]);
-        paint(vec4(1.0,0.753,0.796,1.0));
+        //paint(vec4(1.0,0.753,0.796,1.0));
+        paint(vec4(gui2Parameters.Kd,1.0)); // POR ALGUM MOTIVO QUANDO MUDAMOS A COR NO UI AS VEZES PERDE-SE A COR?
         uploadModelView();
-        switch(shape) {
+        switch(gui2Parameters.shapes) {
             case CUBE_SOLID: CUBE.draw(gl,program,mode)
             break;
             case SPHERE_SOLID: SPHERE.draw(gl,program,mode)
@@ -224,6 +225,7 @@ function setup(shaders)
         specular: vec3(255,255,255),
         directional: false,
         active: true,
+        buttonAddLight: addLight,
     }
 
     gui2.add(gui2Parameters, "shapes", ["Cube", "Sphere", "Torus", "Pyramid", "Cylinder"]).name("Object");
@@ -272,12 +274,17 @@ function setup(shaders)
 
     //Code for every added Light!
     const lights = gui.addFolder("Lights")
-    lights.add(light, "nOfLights", ["0","1","2","3","4","5","6","7","8"]).name("NumberLights");
-
+    lights.add(light, "buttonAddLight").name("Add New Light");
 
     lights.open()
+    
     //lightGUI.open()
     //positionGUI.open()
+
+    function addLight(){
+        light.nOfLights++;
+        console.log(light.nOfLights)
+    }
 
     function render()
     {
@@ -335,7 +342,7 @@ function setup(shaders)
         popMatrix()
 
         pushMatrix()
-        drawShape(gui2Parameters.shapes);
+        drawShape(gui2Parameters);
         popMatrix()
 
         //console.log(options["backface culling"]);
