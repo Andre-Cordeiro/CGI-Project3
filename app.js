@@ -128,7 +128,7 @@ function setup(shaders)
         multScale([1,1,1]);
         multTranslation([0, 0.5, 0]);
         //paint(vec4(1.0,0.753,0.796,1.0));
-        paint(vec4(gui2Parameters.Kd,1.0)); // POR ALGUM MOTIVO QUANDO MUDAMOS A COR NO UI AS VEZES PERDE-SE A COR?
+        //paint(vec4(gui2Parameters.Kd,1.0)); // POR ALGUM MOTIVO QUANDO MUDAMOS A COR NO UI AS VEZES PERDE-SE A COR?
         uploadModelView();
         switch(gui2Parameters.shapes) {
             case CUBE_SOLID: CUBE.draw(gl,program,mode)
@@ -147,9 +147,9 @@ function setup(shaders)
 
     function lighsToAdd(){
         //Here we add all the lights to our program!
-        if(nOfActualLights < light.nOfLights){
-            for(let i = Number(nOfActualLights) + Number(1); i<=light.nOfLights;i++){
-                const lightGUI = lights.addFolder("Light"+ i)
+        if(nOfActualLights < lights.length/*light.nOfLights*/){
+            for(let i = Number(nOfActualLights) + Number(1); i<=lights.length/*light.nOfLights*/;i++){
+                const lightGUI = lightsFolder.addFolder("Light"+ i)
                 const positionGUI = lightGUI.addFolder("position")
                 positionGUI.add(position.pos, 0).name("x").listen()
                 positionGUI.add(position.pos, 1).name("y").listen()
@@ -160,7 +160,7 @@ function setup(shaders)
                 positionGUI.add(position, "directional")
                 positionGUI.add(position, "active")
             }
-            nOfActualLights = light.nOfLights;
+            nOfActualLights = lights.length/*light.nOfLights*/;
         }
     }
 
@@ -231,7 +231,7 @@ function setup(shaders)
     gui2.add(gui2Parameters, "shapes", ["Cube", "Sphere", "Torus", "Pyramid", "Cylinder"]).name("Object");
     const materialGUI = gui2.addFolder("Material")
     materialGUI.addColor(gui2Parameters,"Ka")
-    materialGUI.addColor(gui2Parameters,"Kd")
+    materialGUI.addColor(gui2Parameters,"Kd").listen()
     materialGUI.addColor(gui2Parameters,"Ks")
     materialGUI.add(gui2Parameters,"Shininess")
     materialGUI.open()
@@ -273,17 +273,22 @@ function setup(shaders)
 
 
     //Code for every added Light!
-    const lights = gui.addFolder("Lights")
-    lights.add(light, "buttonAddLight").name("Add New Light");
+    const lightsFolder = gui.addFolder("Lights")
+    lightsFolder.add(light, "buttonAddLight").name("Add New Light");
 
-    lights.open()
+    lightsFolder.open()
     
     //lightGUI.open()
     //positionGUI.open()
 
     function addLight(){
-        light.nOfLights++;
-        console.log(light.nOfLights)
+        lights.push(light);
+    }
+
+    function drawLights(){
+        for(let i=0;i<lights.length;i++){
+
+        }
     }
 
     function render()
@@ -334,7 +339,12 @@ function setup(shaders)
         gl.useProgram(program);
         
         gl.uniformMatrix4fv(gl.getUniformLocation(program, "mProjection"), false, flatten(mProjection));
-    
+        gl.uniform3fv(gl.getUniformLocation(program, "uMaterial.Kd"), flatten(vec3(gui2Parameters.Kd[0]/255, gui2Parameters.Kd[1]/255,gui2Parameters.Kd[2]/255)));
+        gl.uniform3fv(gl.getUniformLocation(program, "uMaterial.Ka"), flatten(vec3(gui2Parameters.Ka[0]/255, gui2Parameters.Ka[1] /255,gui2Parameters.Ka[2] /255)));
+        gl.uniform3fv(gl.getUniformLocation(program, "uMaterial.Ks"), flatten(vec3(gui2Parameters.Ks[0]/255, gui2Parameters.Ks[1] /255,gui2Parameters.Ks[2] /255)));
+
+
+        
         loadMatrix(view);
 
         pushMatrix()
@@ -344,6 +354,10 @@ function setup(shaders)
         pushMatrix()
         drawShape(gui2Parameters);
         popMatrix()
+
+        pushMatrix
+        drawLights();
+        popMatrix
 
         //console.log(options["backface culling"]);
         //console.log(gui2Parameters.shapes);

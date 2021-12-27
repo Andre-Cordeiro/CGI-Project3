@@ -6,39 +6,71 @@ varying vec3 fLight;
 varying vec3 fViewer;
 uniform vec4 fColor;
 
-//material
-uniform vec3 ka;
-uniform vec3 kd;
-uniform vec3 ks;
-uniform float shine;
+varying vec3 NN;
+varying vec3 posC;
 
-uniform vec3 lightA;
-uniform vec3 lightD;
-uniform vec3 lightS;
+const int MAX_LIGHTS = 8;
 
-vec3 aColor = lightA * ka;
-vec3 dColor = lightD * kd;
-vec3 sColor = lightS * ks;
+struct LightInfo {
+    vec3 pos;
+    vec3 Ia;
+    vec3 Id;
+    vec3 Is;
+    bool isDirectional;
+    bool isActive;
+};
 
-void main() {
-    if(lightMode == 0.0)
-        gl_FragColor = fColor;
-    else {
-        vec3 L = normalize(fLight);
-        vec3 V = normalize(fViewer);
-        vec3 N = normalize(fNormal);
-        vec3 H = normalize(L+V);
+struct MaterialInfo {
+    vec3 Ka;
+    vec3 Kd;
+    vec3 Ks;
+    float shininess;
+};
+
+uniform int uNLights; // Effective number of lights used
+
+uniform LightInfo uLight[MAX_LIGHTS]; // The array of lights present in the scene
+uniform MaterialInfo uMaterial;  // The material of the object being drawn
+
+vec4 calculateColor(){
+
+    vec3 aColor;
+    vec3 dColor;
+    vec3 sColor;
+    vec3 finalLight = vec3(0.0, 0.0, 0.0);
+
+    for(int i=0; i<MAX_LIGHTS;i++){
+        LightInfo light= uLight[i];
+
+        aColor = light.Ia * uMaterial.Ka;
+        dColor = light.Id * uMaterial.Kd;
+        sColor = light.Is * uMaterial.Ks;
+
+        vec3 P = normalize(posC);
+        vec3 N = normalize(NN);
+        vec3 L = normalize(light.pos - P);
+        vec3 R = normalize (reflect(-L,N));
 
         float diffuseF = max(dot(L,N), 0.0);
         vec3 diffuse = diffuseF * dColor;
-        
-        float specularF = pow(max(dot(N,H), 0.0), shine);
+
+        float specularF = pow(max(dot(N,R), 0.0), uMaterial.shininess);
         vec3 specular = specularF * sColor;
+
 
         if(dot(L,N) < 0.0)
             specular = vec3(0.0,0.0,0.0);
-        gl_FragColor = vec4(aColor + diffuse + specular, 1.0);
+
+        finalLight += aColor + diffuse + specular;
+
+        if(i == uNLights) break;
     }
-    //vec3 c = fNormal + vec3(1.0, 1.0, 1.0);
-    
+    return vec4(finalLight, 1.0);
+}
+
+
+
+void main() {
+    gl_FragColor = calculateColor();
+    //vec3 c = fNormal + vec3(1.0,1.0,1.0);
 }
