@@ -1,5 +1,5 @@
 import { buildProgramFromSources, loadShadersFromURLS, setupWebGL } from "../../libs/utils.js";
-import { ortho, lookAt, flatten, vec4, mult, rotateZ, perspective, vec3} from "../../libs/MV.js";
+import { ortho, lookAt, flatten, vec4, mult, rotateZ, perspective, vec3, normalMatrix} from "../../libs/MV.js";
 import {modelView, loadMatrix, multRotationY, multScale, multTranslation, popMatrix, pushMatrix, multRotationZ, multRotationX} from "../../libs/stack.js";
 
 import * as dat from "../../libs/dat.gui.module.js";
@@ -325,13 +325,12 @@ function setup(shaders)
 
     function drawLights(){
         for(let i=0;i<lights.length && showLightsMode;i++){
-          pushMatrix
+          pushMatrix()
             multTranslation(lights[i].pos)
-            if(i==0)
-                multScale([0.2,0.2,0.2]);
+            multScale([0.2,0.2,0.2]);
             uploadModelView();
             SPHERE.draw(gl,program,mode);
-          popMatrix  
+          popMatrix()  
         }
     }
 
@@ -377,6 +376,13 @@ function setup(shaders)
         
         gl.useProgram(program);
         
+        gl.uniformMatrix4fv(gl.getUniformLocation(program, "mProjection"),false,flatten(perspective(camera.fovy,camera.aspect,camera.near,camera.far)));
+        gl.uniformMatrix4fv(gl.getUniformLocation(program, "mModelView"),false,flatten(modelView()));
+        gl.uniformMatrix4fv(gl.getUniformLocation(program, "mNormals"),false,flatten(normalMatrix(modelView())));
+        gl.uniformMatrix4fv(gl.getUniformLocation(program, "mModelNormals"),false,flatten(normalMatrix(modelView())));
+        gl.uniformMatrix4fv(gl.getUniformLocation(program, "mView"),false,flatten(lookAt(camera.eye,camera.at,camera.up)));
+        gl.uniformMatrix4fv(gl.getUniformLocation(program, "mProjection"),false,flatten(perspective(camera.eye,camera.at,camera.up)));
+
         gl.uniformMatrix4fv(gl.getUniformLocation(program, "mProjection"), false, flatten(mProjection));
         gl.uniform3fv(gl.getUniformLocation(program, "uMaterial.Kd"), flatten(vec3(gui2Parameters.Kd[0]/255, gui2Parameters.Kd[1] /255,gui2Parameters.Kd[2] /255)));
         gl.uniform3fv(gl.getUniformLocation(program, "uMaterial.Ka"), flatten(vec3(gui2Parameters.Ka[0]/255, gui2Parameters.Ka[1] /255,gui2Parameters.Ka[2] /255)));
@@ -384,13 +390,14 @@ function setup(shaders)
         gl.uniform1f(gl.getUniformLocation(program, "uMaterial.shininess"), gui2Parameters.Shininess);
 
 
+        gl.uniform1i(gl.getUniformLocation(program,"uNLights"),lights.length);
         for(let i=0;i<lights.length;i++){
             gl.uniform3fv(gl.getUniformLocation(program, "uLight["+i+"].pos"),flatten(lights[i].pos));
             gl.uniform1f(gl.getUniformLocation(program, "uLight["+i+"].isDirectional"), lights[i].directional);
             gl.uniform1f(gl.getUniformLocation(program, "uLight["+i+"].isActive"), lights[i].active);
-            gl.uniform3fv(gl.getUniformLocation(program, "uLight["+i+"].Ia"),flatten(vec3(position.ambient[0]/255, position.ambient[1] /255,position.ambient[2] /255)));
-            gl.uniform3fv(gl.getUniformLocation(program, "uLight["+i+"].Id"),flatten(vec3(position.diffuse[0]/255, position.diffuse[1] /255,position.diffuse[2] /255)));
-            gl.uniform3fv(gl.getUniformLocation(program, "uLight["+i+"].Is"),flatten(vec3(position.specular[0]/255, position.specular[1] /255,position.specular[2] /255)));
+            gl.uniform3fv(gl.getUniformLocation(program, "uLight["+i+"].Ia"),flatten(vec3(lights[i].ambient[0]/255, lights[i].ambient[1] /255,lights[i].ambient[2] /255)));
+            gl.uniform3fv(gl.getUniformLocation(program, "uLight["+i+"].Id"),flatten(vec3(lights[i].diffuse[0]/255, lights[i].diffuse[1] /255,lights[i].diffuse[2] /255)));
+            gl.uniform3fv(gl.getUniformLocation(program, "uLight["+i+"].Is"),flatten(vec3(lights[i].specular[0]/255, lights[i].specular[1] /255,lights[i].specular[2] /255)));
         }
         
         loadMatrix(view);
