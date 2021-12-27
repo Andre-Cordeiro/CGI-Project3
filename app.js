@@ -1,5 +1,5 @@
 import { buildProgramFromSources, loadShadersFromURLS, setupWebGL } from "../../libs/utils.js";
-import { ortho, lookAt, flatten, vec4, mult, rotateZ, perspective, vec3} from "../../libs/MV.js";
+import { ortho, lookAt, flatten, vec4, mult, rotateZ, perspective, vec3, normalMatrix} from "../../libs/MV.js";
 import {modelView, loadMatrix, multRotationY, multScale, multTranslation, popMatrix, pushMatrix, multRotationZ, multRotationX} from "../../libs/stack.js";
 
 import * as dat from "../../libs/dat.gui.module.js";
@@ -302,7 +302,7 @@ function setup(shaders)
                 multScale([0.2,0.2,0.2]);
 
             uploadModelView();
-            SPHERE.draw(gl,program,mode);
+            SPHERE.draw(gl,program,gl.LINES);
           popMatrix  
         }
     }
@@ -353,6 +353,14 @@ function setup(shaders)
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         
         gl.useProgram(program);
+
+        gl.uniformMatrix4fv(gl.getUniformLocation(program, "mProjection"),false,flatten(perspective(camera.fovy,camera.aspect,camera.near,camera.far)));
+        gl.uniformMatrix4fv(gl.getUniformLocation(program, "mModelView"),false,flatten(modelView()));
+        gl.uniformMatrix4fv(gl.getUniformLocation(program, "mNormals"),false,flatten(normalMatrix(modelView())));
+        gl.uniformMatrix4fv(gl.getUniformLocation(program, "mModelNormals"),false,flatten(normalMatrix(modelView())));
+        gl.uniformMatrix4fv(gl.getUniformLocation(program, "mView"),false,flatten(lookAt(camera.eye,camera.at,camera.up)));
+        gl.uniformMatrix4fv(gl.getUniformLocation(program, "mProjection"),false,flatten(perspective(camera.eye,camera.at,camera.up)));
+        
         
         gl.uniformMatrix4fv(gl.getUniformLocation(program, "mProjection"), false, flatten(mProjection));
         gl.uniform3fv(gl.getUniformLocation(program, "uMaterial.Kd"), flatten(vec3(gui2Parameters.Kd[0]/255, gui2Parameters.Kd[1] /255,gui2Parameters.Kd[2] /255)));
@@ -361,6 +369,7 @@ function setup(shaders)
         gl.uniform1f(gl.getUniformLocation(program, "uMaterial.shininess"), gui2Parameters.Shininess);
 
 
+        gl.uniform1i(gl.getUniformLocation(program,"uNLights"),lights.length);
         for(let i=0;i<lights.length;i++){
             gl.uniform3fv(gl.getUniformLocation(program, "uLight["+i+"].pos"),flatten(lights[i].pos));
             gl.uniform1f(gl.getUniformLocation(program, "uLight["+i+"].isDirectional"), lights[i].directional);
