@@ -71,7 +71,7 @@ vec4 calculateColor(){
 
 
 void main() {
-    //gl_FragColor = calculateColor();
-    gl_FragColor = vec4(uMaterial.Kd,1.0);
+    gl_FragColor = calculateColor();
+    //gl_FragColor = vec4(uMaterial.Kd,1.0);
     //vec3 c = fNormal + vec3(1.0,1.0,1.0);
 }
