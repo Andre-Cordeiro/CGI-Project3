@@ -282,12 +282,28 @@ function setup(shaders)
     //positionGUI.open()
 
     function addLight(){
+        /*let newLight={
+            pos: vec3(0,1,0),
+            ambient: vec3(75,75,75),
+            diffuse: vec3(175,175,175),
+            specular:vec3(255,255,255),
+            directional: false,
+            active: true,
+        };*/
+        //lights.push(newLight);
         lights.push(light);
     }
 
     function drawLights(){
         for(let i=0;i<lights.length;i++){
+          pushMatrix
+            multTranslation(lights[i].pos)
+            if(i==0)
+                multScale([0.2,0.2,0.2]);
 
+            uploadModelView();
+            SPHERE.draw(gl,program,mode);
+          popMatrix  
         }
     }
 
@@ -307,10 +323,10 @@ function setup(shaders)
         else
             gl.disable(gl.CULL_FACE);
 
-        if(showLightsMode)
-           console.log("apenas para n dar erro") //TODO: FAZER LUZES APARECEREM
+        /*if(showLightsMode)
+           drawLights(); //TODO: FAZER LUZES APARECEREM
         else
-           console.log("apenas para n dar erro")//TODO : FAZER LUZES DESAPARECEREM
+           console.log("apenas para n dar erro")//TODO : FAZER LUZES DESAPARECEREM*/
        
         //Updates the fovy
         updateFovy();
@@ -339,11 +355,20 @@ function setup(shaders)
         gl.useProgram(program);
         
         gl.uniformMatrix4fv(gl.getUniformLocation(program, "mProjection"), false, flatten(mProjection));
-        gl.uniform3fv(gl.getUniformLocation(program, "uMaterial.Kd"), flatten(vec3(gui2Parameters.Kd[0]/255, gui2Parameters.Kd[1]/255,gui2Parameters.Kd[2]/255)));
+        gl.uniform3fv(gl.getUniformLocation(program, "uMaterial.Kd"), flatten(vec3(gui2Parameters.Kd[0]/255, gui2Parameters.Kd[1] /255,gui2Parameters.Kd[2] /255)));
         gl.uniform3fv(gl.getUniformLocation(program, "uMaterial.Ka"), flatten(vec3(gui2Parameters.Ka[0]/255, gui2Parameters.Ka[1] /255,gui2Parameters.Ka[2] /255)));
         gl.uniform3fv(gl.getUniformLocation(program, "uMaterial.Ks"), flatten(vec3(gui2Parameters.Ks[0]/255, gui2Parameters.Ks[1] /255,gui2Parameters.Ks[2] /255)));
+        gl.uniform1f(gl.getUniformLocation(program, "uMaterial.shininess"), gui2Parameters.Shininess);
 
 
+        for(let i=0;i<lights.length;i++){
+            gl.uniform3fv(gl.getUniformLocation(program, "uLight["+i+"].pos"),flatten(lights[i].pos));
+            gl.uniform1f(gl.getUniformLocation(program, "uLight["+i+"].isDirectional"), lights[i].directional);
+            gl.uniform1f(gl.getUniformLocation(program, "uLight["+i+"].isActive"), lights[i].active);
+            gl.uniform3fv(gl.getUniformLocation(program, "uLight["+i+"].Ia"),flatten(vec3(position.ambient[0]/255, position.ambient[1] /255,position.ambient[2] /255)));
+            gl.uniform3fv(gl.getUniformLocation(program, "uLight["+i+"].Id"),flatten(vec3(position.diffuse[0]/255, position.diffuse[1] /255,position.diffuse[2] /255)));
+            gl.uniform3fv(gl.getUniformLocation(program, "uLight["+i+"].Is"),flatten(vec3(position.specular[0]/255, position.specular[1] /255,position.specular[2] /255)));
+        }
         
         loadMatrix(view);
 
@@ -358,6 +383,7 @@ function setup(shaders)
         pushMatrix
         drawLights();
         popMatrix
+  
 
         //console.log(options["backface culling"]);
         //console.log(gui2Parameters.shapes);
