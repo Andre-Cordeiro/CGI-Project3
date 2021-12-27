@@ -56,7 +56,7 @@ PYRAMID_SOLID = "Pyramid", CYLINDER_SOLID = "Cylinder";
 var drawFunctions = [[cubeWF, cubeF], [sphereWF, sphereF],
     [torusWF, torusF], [pyramidWF, pyramidF], [cylinderWF, cylinderF]];
 */
-
+const MAX_LIGHTS = 8;
 let lights = [];
 let nOfActualLights = 0;
 
@@ -145,24 +145,6 @@ function setup(shaders)
         }
     }
 
-    function lighsToAdd(){
-        //Here we add all the lights to our program!
-        if(nOfActualLights < lights.length/*light.nOfLights*/){
-            for(let i = Number(nOfActualLights) + Number(1); i<=lights.length/*light.nOfLights*/;i++){
-                const lightGUI = lightsFolder.addFolder("Light"+ i)
-                const positionGUI = lightGUI.addFolder("position")
-                positionGUI.add(position.pos, 0).name("x").listen()
-                positionGUI.add(position.pos, 1).name("y").listen()
-                positionGUI.add(position.pos, 2).name("z").listen()
-                positionGUI.addColor(position, "ambient")
-                positionGUI.addColor(position, "diffuse")
-                positionGUI.addColor(position, "specular")
-                positionGUI.add(position, "directional")
-                positionGUI.add(position, "active")
-            }
-            nOfActualLights = lights.length/*light.nOfLights*/;
-        }
-    }
 
     function updateLookAt(){
         view = lookAt(camera.eye, camera.at, camera.up);
@@ -195,7 +177,7 @@ function setup(shaders)
     let options = {
         "backface culling": true,
         "depth test": true,
-        "show lights": false,
+        "show lights": true,
     }
 
     let camera = {
@@ -217,15 +199,55 @@ function setup(shaders)
         active: true,
     }
 
-    let light = {
-        nOfLights: 0,
-        pos: vec3(0,1,0),
-        ambient: vec3(75,75,75),
-        diffuse: vec3(175,175,175),
-        specular: vec3(255,255,255),
-        directional: false,
-        active: true,
-        buttonAddLight: addLight,
+    function getRandom(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+
+    function generateLight(){
+
+        const nLights = lights.length;
+
+        let ambient, diffuse, specular, pos, active, directional;
+
+        let x, y, z;
+        
+        if((nLights%3) == 0) {
+
+            ambient = vec3(75,5,5);
+            diffuse = vec3(175,15,15);
+            x = getRandom(0, 3);
+            y = getRandom(-3, 0);
+            z = getRandom(-3, 3);
+        }
+        else if((nLights%3 == 1)) {
+            ambient = vec3(5,5,75);
+            diffuse = vec3(15,105,175);
+            x = getRandom(-3, 0);
+            y = getRandom(0, 3);
+            z = getRandom(-3, 3);
+        }
+        else {
+            ambient = vec3(5,75,5);
+            diffuse = vec3(35,175,15);
+            x = getRandom(0, 3);
+            y = getRandom(0, 3);
+            z = getRandom(-3, 3);
+        }
+        
+        specular = vec3(255,255,255);
+        pos = vec3(x,y,z);
+        directional = false;
+        active = true;
+
+        console.log(" x: " + x + " y: " + y + " z: "+ z);
+        return {
+            ambient, 
+            diffuse, 
+            specular, 
+            pos, 
+            active, 
+            directional
+        }
     }
 
     gui2.add(gui2Parameters, "shapes", ["Cube", "Sphere", "Torus", "Pyramid", "Cylinder"]).name("Object");
@@ -274,33 +296,38 @@ function setup(shaders)
 
     //Code for every added Light!
     const lightsFolder = gui.addFolder("Lights")
-    lightsFolder.add(light, "buttonAddLight").name("Add New Light");
+    lightsFolder.add({nOfLights: 0, buttonAddLight: addLight }, "buttonAddLight").name("Add New Light");
 
     lightsFolder.open()
+
+    // add initially a light
     
     //lightGUI.open()
     //positionGUI.open()
 
     function addLight(){
-        /*let newLight={
-            pos: vec3(0,1,0),
-            ambient: vec3(75,75,75),
-            diffuse: vec3(175,175,175),
-            specular:vec3(255,255,255),
-            directional: false,
-            active: true,
-        };*/
-        //lights.push(newLight);
+        const light = generateLight();
         lights.push(light);
+
+        // add light to the folder
+        const index = lights.length - 1;
+        const lightGUI = lightsFolder.addFolder("Light"+ index);
+        const positionGUI = lightGUI.addFolder("position")
+        positionGUI.add(light.pos, 0).name("x").listen()
+        positionGUI.add(light.pos, 1).name("y").listen()
+        positionGUI.add(light.pos, 2).name("z").listen()
+        positionGUI.addColor(light, "ambient")
+        positionGUI.addColor(light, "diffuse")
+        positionGUI.addColor(light, "specular")
+        positionGUI.add(light, "directional")
+        positionGUI.add(light, "active")
     }
 
     function drawLights(){
-        for(let i=0;i<lights.length;i++){
-          pushMatrix
+        for(let i=0;i<lights.length && showLightsMode;i++){
+          pushMatrix()
             multTranslation(lights[i].pos)
-            if(i==0)
-                multScale([0.2,0.2,0.2]);
-
+            multScale([0.2,0.2,0.2]);
             uploadModelView();
             SPHERE.draw(gl,program,gl.LINES);
           popMatrix  
@@ -322,11 +349,6 @@ function setup(shaders)
             gl.enable(gl.CULL_FACE);
         else
             gl.disable(gl.CULL_FACE);
-
-        /*if(showLightsMode)
-           drawLights(); //TODO: FAZER LUZES APARECEREM
-        else
-           console.log("apenas para n dar erro")//TODO : FAZER LUZES DESAPARECEREM*/
        
         //Updates the fovy
         updateFovy();
@@ -341,13 +363,13 @@ function setup(shaders)
         updateZBuffer();
 
         //Update showLights
-        updateShowLights(); //NOT WORKING YET!
+        updateShowLights();
 
         //Updates the color of the solid object
         //updateSolidColor();
 
         //Adds Lights to UI
-        lighsToAdd();
+        // lighsToAdd();
 
 
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -362,6 +384,13 @@ function setup(shaders)
         gl.uniformMatrix4fv(gl.getUniformLocation(program, "mProjection"),false,flatten(perspective(camera.eye,camera.at,camera.up)));
         
         
+        gl.uniformMatrix4fv(gl.getUniformLocation(program, "mProjection"),false,flatten(perspective(camera.fovy,camera.aspect,camera.near,camera.far)));
+        gl.uniformMatrix4fv(gl.getUniformLocation(program, "mModelView"),false,flatten(modelView()));
+        gl.uniformMatrix4fv(gl.getUniformLocation(program, "mNormals"),false,flatten(normalMatrix(modelView())));
+        gl.uniformMatrix4fv(gl.getUniformLocation(program, "mModelNormals"),false,flatten(normalMatrix(modelView())));
+        gl.uniformMatrix4fv(gl.getUniformLocation(program, "mView"),false,flatten(lookAt(camera.eye,camera.at,camera.up)));
+        gl.uniformMatrix4fv(gl.getUniformLocation(program, "mProjection"),false,flatten(perspective(camera.eye,camera.at,camera.up)));
+
         gl.uniformMatrix4fv(gl.getUniformLocation(program, "mProjection"), false, flatten(mProjection));
         gl.uniform3fv(gl.getUniformLocation(program, "uMaterial.Kd"), flatten(vec3(gui2Parameters.Kd[0]/255, gui2Parameters.Kd[1] /255,gui2Parameters.Kd[2] /255)));
         gl.uniform3fv(gl.getUniformLocation(program, "uMaterial.Ka"), flatten(vec3(gui2Parameters.Ka[0]/255, gui2Parameters.Ka[1] /255,gui2Parameters.Ka[2] /255)));
@@ -374,9 +403,9 @@ function setup(shaders)
             gl.uniform3fv(gl.getUniformLocation(program, "uLight["+i+"].pos"),flatten(lights[i].pos));
             gl.uniform1f(gl.getUniformLocation(program, "uLight["+i+"].isDirectional"), lights[i].directional);
             gl.uniform1f(gl.getUniformLocation(program, "uLight["+i+"].isActive"), lights[i].active);
-            gl.uniform3fv(gl.getUniformLocation(program, "uLight["+i+"].Ia"),flatten(vec3(position.ambient[0]/255, position.ambient[1] /255,position.ambient[2] /255)));
-            gl.uniform3fv(gl.getUniformLocation(program, "uLight["+i+"].Id"),flatten(vec3(position.diffuse[0]/255, position.diffuse[1] /255,position.diffuse[2] /255)));
-            gl.uniform3fv(gl.getUniformLocation(program, "uLight["+i+"].Is"),flatten(vec3(position.specular[0]/255, position.specular[1] /255,position.specular[2] /255)));
+            gl.uniform3fv(gl.getUniformLocation(program, "uLight["+i+"].Ia"),flatten(vec3(lights[i].ambient[0]/255, lights[i].ambient[1] /255,lights[i].ambient[2] /255)));
+            gl.uniform3fv(gl.getUniformLocation(program, "uLight["+i+"].Id"),flatten(vec3(lights[i].diffuse[0]/255, lights[i].diffuse[1] /255,lights[i].diffuse[2] /255)));
+            gl.uniform3fv(gl.getUniformLocation(program, "uLight["+i+"].Is"),flatten(vec3(lights[i].specular[0]/255, lights[i].specular[1] /255,lights[i].specular[2] /255)));
         }
         
         loadMatrix(view);
@@ -389,10 +418,11 @@ function setup(shaders)
         drawShape(gui2Parameters);
         popMatrix()
 
-        pushMatrix
+        pushMatrix()
         drawLights();
-        popMatrix
+        popMatrix()
   
+        
 
         //console.log(options["backface culling"]);
         //console.log(gui2Parameters.shapes);
