@@ -30,7 +30,7 @@ const gui2 = new dat.GUI();
 
 
 //Camera Views
-const initView = lookAt([0,3,5], [0,0,0], [0,1,0]);
+const initView = lookAt([0,0,5], [0,0,0], [0,1,0]);
 
 //let view = topView;
 //let view = axonometricView;
@@ -335,7 +335,7 @@ function setup(shaders)
             //console.log(lights[i].diffuse);
             //uploadModelView();
             gl.uniformMatrix4fv(gl.getUniformLocation(programLights, "mModelView"), false, flatten(modelView()));
-            SPHERE.draw(gl,programLights,gl);
+            SPHERE.draw(gl,programLights,gl.LINES);
           popMatrix()
         }
     }
