@@ -1,6 +1,6 @@
 import { buildProgramFromSources, loadShadersFromURLS, setupWebGL } from "../../libs/utils.js";
-import { ortho, lookAt, flatten, vec4, mult, rotateZ, perspective, vec3, normalMatrix, normalize} from "../../libs/MV.js";
-import {modelView, loadMatrix, multRotationY, multScale, multTranslation, popMatrix, pushMatrix, multRotationZ, multRotationX} from "../../libs/stack.js";
+import { ortho, lookAt, flatten, vec4, mult, rotateZ, perspective, vec3, normalMatrix} from "../../libs/MV.js";
+import {modelView, loadMatrix, multRotationY, multScale, multTranslation, popMatrix, pushMatrix} from "../../libs/stack.js";
 
 import * as dat from "../../libs/dat.gui.module.js";
 
@@ -18,12 +18,6 @@ let mode;
 let animation = true;
 let VP_DISTANCE = 5;
 
-let mModelLoc;
-let mView, mProjection;
-let mViewLoc, mProjectionLoc;
-let mNormals, mViewNormals;
-let mNormalsLoc, mViewNormalsLoc;
-
 //Interfaces
 const gui = new dat.GUI();
 const gui2 = new dat.GUI();
@@ -32,16 +26,9 @@ const gui2 = new dat.GUI();
 //Camera Views
 const initView = lookAt([0,0,5], [0,0,0], [0,1,0]);
 
-//let view = topView;
-//let view = axonometricView;
-//let view = frontView; //Camera's first view
 let view = initView;
 
 const zoom = 1.5;
-
-
-const WIREFRAME = 0;
-const FILLED = 1;
 
 var zBufferMode;
 var backFaceCullingMode;
@@ -51,14 +38,8 @@ var showLightsMode;
 const CUBE_SOLID = "Cube", SPHERE_SOLID = "Sphere", TORUS_SOLID = "Torus", 
 PYRAMID_SOLID = "Pyramid", CYLINDER_SOLID = "Cylinder";
 
-//WF = wireFrame | F = filled
-/**
-var drawFunctions = [[cubeWF, cubeF], [sphereWF, sphereF],
-    [torusWF, torusF], [pyramidWF, pyramidF], [cylinderWF, cylinderF]];
-*/
 const MAX_LIGHTS = 8;
 let lights = [];
-let nOfActualLights = 0;
 
 
 
@@ -79,8 +60,7 @@ function setup(shaders)
     resize_canvas();
     window.addEventListener("resize", resize_canvas);
 
-    //gl.clearColor(0.5, 0.5, 0.6, 1.0);
-    gl.clearColor(0,0,0, 1.0);
+    gl.clearColor(0.2, 0.2, 0.2, 1.0);
     CUBE.init(gl);
     PYRAMID.init(gl);
     CYLINDER.init(gl);
@@ -121,7 +101,6 @@ function setup(shaders)
     function drawFloor(){
         multScale([3,0.1,3]);
         multTranslation([0,-0.6,0]);
-        //paint(vec4(1.0,1.0,1.0,1.0));
         uploadModelView();
         CUBE.draw(gl,program,mode);
     }
@@ -129,8 +108,6 @@ function setup(shaders)
     function drawShape(gui2Parameters){
         multScale([1,1,1]);
         multTranslation([0, 0.5, 0]);
-        //paint(vec4(1.0,0.753,0.796,1.0));
-        //paint(vec4(gui2Parameters.Kd,1.0)); // POR ALGUM MOTIVO QUANDO MUDAMOS A COR NO UI AS VEZES PERDE-SE A COR?
         uploadModelView();
         switch(gui2Parameters.shapes) {
             case CUBE_SOLID: CUBE.draw(gl,program,mode)
@@ -190,16 +167,7 @@ function setup(shaders)
         near: 0.1,
         far: 20,
     }
-
-    //dividir a ilumnicao por 255 no shader
-    let position = {
-        pos: vec3(0,1,0),
-        ambient: vec3(75,75,75),
-        diffuse: vec3(175,175,175),
-        specular: vec3(255,255,255),
-        directional: false,
-        active: true,
-    }
+    
 
     function getRandom(min, max) {
         return Math.random() * (max - min) + min;
@@ -213,30 +181,39 @@ function setup(shaders)
 
         let x, y, z;
         
-        if((nLights%3) == 0) {
 
-            ambient = vec3(75,5,5);
+        if(nLights == 0) {
+            x = 0.0;
+            y = 2.0;
+            z = 0.0;
+            ambient = vec3(75,75,75);
             diffuse = vec3(255,255,255);
-            x = getRandom(0, 3);
-            y = getRandom(-3, 0);
+            specular = vec3(255,255,255);
+        }
+        else if((nLights%3) == 0) {
+            x = getRandom(-3, 3);
+            y = getRandom(-3, 3);
             z = getRandom(-3, 3);
+            ambient = vec3(75,5,5);
+            diffuse = vec3(135,5,5);
+            specular = vec3(220,165,165);
         }
         else if((nLights%3 == 1)) {
+            x = getRandom(-3, 3);
+            y = getRandom(-3, 3);
+            z = getRandom(-3, 3);
             ambient = vec3(5,5,75);
             diffuse = vec3(15,105,175);
-            x = getRandom(-3, 0);
-            y = getRandom(0, 3);
-            z = getRandom(-3, 3);
+            specular = vec3(125,190,215);
         }
         else {
+            x = getRandom(-3, 3);
+            y = getRandom(-3, 3);
+            z = getRandom(-3, 3);
             ambient = vec3(5,75,5);
             diffuse = vec3(35,175,15);
-            x = getRandom(0, 3);
-            y = getRandom(0, 3);
-            z = getRandom(-3, 3);
+            specular = vec3(190,235,175);
         }
-        
-        specular = vec3(255,255,255);
         pos = vec3(x,y,z);
         directional = false;
         active = true;
@@ -257,7 +234,7 @@ function setup(shaders)
     materialGUI.addColor(gui2Parameters,"Ka").listen()
     materialGUI.addColor(gui2Parameters,"Kd").listen()
     materialGUI.addColor(gui2Parameters,"Ks").listen()
-    materialGUI.add(gui2Parameters,"Shininess").listen()
+    materialGUI.add(gui2Parameters,"Shininess").min(0).listen()
     materialGUI.open()
 
 
@@ -302,38 +279,32 @@ function setup(shaders)
 
     lightsFolder.open()
 
-    // add initially a light
-    
-    //lightGUI.open()
-    //positionGUI.open()
-
     function addLight(){
-        const light = generateLight();
-        lights.push(light);
+        if(lights.length <= MAX_LIGHTS){
+            const light = generateLight();
+            lights.push(light);
 
-        // add light to the folder
-        const index = lights.length - 1;
-        const lightGUI = lightsFolder.addFolder("Light"+ index);
-        const positionGUI = lightGUI.addFolder("position")
-        positionGUI.add(light.pos, 0).name("x").listen()
-        positionGUI.add(light.pos, 1).name("y").listen()
-        positionGUI.add(light.pos, 2).name("z").listen()
-        positionGUI.addColor(light, "ambient").listen()
-        positionGUI.addColor(light, "diffuse").listen()
-        positionGUI.addColor(light, "specular").listen()
-        positionGUI.add(light, "directional").listen()
-        positionGUI.add(light, "active").listen()
+            // add light to the folder
+            const index = lights.length - 1;
+            const lightGUI = lightsFolder.addFolder("Light"+ index);
+            const positionGUI = lightGUI.addFolder("position")
+            positionGUI.add(light.pos, 0).name("x").listen()
+            positionGUI.add(light.pos, 1).name("y").listen()
+            positionGUI.add(light.pos, 2).name("z").listen()
+            positionGUI.addColor(light, "ambient").listen()
+            positionGUI.addColor(light, "diffuse").listen()
+            positionGUI.addColor(light, "specular").listen()
+            positionGUI.add(light, "directional").listen()
+            positionGUI.add(light, "active").listen()
+        }
     }
 
     function drawLights(){
-        //gl.useProgram(programLights);
         for(let i=0;i<lights.length && showLightsMode;i++){
           pushMatrix()
             multTranslation(lights[i].pos)
             multScale([0.1,0.1,0.1]);
             paint(vec4(lights[i].diffuse[0]/255,lights[i].diffuse[1]/255,lights[i].diffuse[2]/255,1.0));
-            //console.log(lights[i].diffuse);
-            //uploadModelView();
             gl.uniformMatrix4fv(gl.getUniformLocation(programLights, "mModelView"), false, flatten(modelView()));
             SPHERE.draw(gl,programLights,gl.LINES);
           popMatrix()
@@ -342,10 +313,6 @@ function setup(shaders)
 
     function render()
     {
-        if(animation) {
-           
-        }
-
         if(zBufferMode)
             gl.enable(gl.DEPTH_TEST);
         else
@@ -357,6 +324,12 @@ function setup(shaders)
         }
         else
             gl.disable(gl.CULL_FACE);
+
+        if(lights.length == 0){
+            console.log("was: " + lights.length);
+            addLight();
+            console.log("is: " + lights.length);
+        }
        
         //Updates the fovy
         updateFovy();
@@ -373,26 +346,18 @@ function setup(shaders)
         //Update showLights
         updateShowLights();
 
-        //Updates the color of the solid object
-        //updateSolidColor();
-
-        //Adds Lights to UI
-        // lighsToAdd();
-
 
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         
         gl.useProgram(program);
 
-        //gl.uniformMatrix4fv(gl.getUniformLocation(program, "mProjection"),false,flatten(perspective(camera.fovy,camera.aspect,camera.near,camera.far)));
         gl.uniformMatrix4fv(gl.getUniformLocation(program, "mModelView"),false,flatten(modelView()));
         gl.uniformMatrix4fv(gl.getUniformLocation(program, "mNormals"),false,flatten(normalMatrix(modelView())));
         //gl.uniformMatrix4fv(gl.getUniformLocation(program, "mModelNormals"),false,flatten(normalMatrix(modelView())));
         let mView = lookAt(camera.eye,camera.at,camera.up);
         gl.uniformMatrix4fv(gl.getUniformLocation(program, "mView"),false,flatten(mView));
         gl.uniformMatrix4fv(gl.getUniformLocation(program, "mViewNormals"),false,flatten(normalMatrix(modelView())));
-        //gl.uniformMatrix4fv(gl.getUniformLocation(program, "mProjection"),false,flatten(perspective(camera.eye,camera.at,camera.up)));
-
+        
         gl.uniformMatrix4fv(gl.getUniformLocation(program, "mProjection"), false, flatten(mProjection));
         gl.uniform3fv(gl.getUniformLocation(program, "uMaterial.Kd"), flatten(vec3(gui2Parameters.Kd[0]/255, gui2Parameters.Kd[1] /255,gui2Parameters.Kd[2] /255)));
         gl.uniform3fv(gl.getUniformLocation(program, "uMaterial.Ka"), flatten(vec3(gui2Parameters.Ka[0]/255, gui2Parameters.Ka[1] /255,gui2Parameters.Ka[2] /255)));
@@ -416,7 +381,7 @@ function setup(shaders)
         gl.uniform3fv(gl.getUniformLocation(program, "uMaterial.Kd"), flatten(vec3(0,0,1.0)));
         gl.uniform3fv(gl.getUniformLocation(program, "uMaterial.Ka"), flatten(vec3(0,0,1)));
         gl.uniform3fv(gl.getUniformLocation(program, "uMaterial.Ks"), flatten(vec3(0,0,1)));
-        gl.uniform1f(gl.getUniformLocation(program, "uMaterial.shininess"), 50);
+        gl.uniform1f(gl.getUniformLocation(program, "uMaterial.shininess"), 150);
         drawFloor();
         popMatrix()
 
@@ -437,11 +402,7 @@ function setup(shaders)
         pushMatrix()
         drawLights();
         popMatrix()
-  
-        
 
-        //console.log(options["backface culling"]);
-        //console.log(gui2Parameters.shapes);
 
         window.requestAnimationFrame(render);
     }

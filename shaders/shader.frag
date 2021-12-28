@@ -46,37 +46,41 @@ vec4 calculateColor(){
     for(int i=0; i<MAX_LIGHTS;i++){
         LightInfo light= uLight[i];
 
-        aColor = light.Ia * uMaterial.Ka;
-        dColor = light.Id * uMaterial.Kd;
-        sColor = light.Is * uMaterial.Ks;
+        if(light.isActive) {
+            aColor = light.Ia * uMaterial.Ka;
+            dColor = light.Id * uMaterial.Kd;
+            sColor = light.Is * uMaterial.Ks;
 
-        vec3 P = normalize(posC);
-        vec3 N = normalize(NN);
-        //vec3 L = normalize(light.pos - P);
-        vec3 L;
+            vec3 P = normalize(posC);
+            vec3 N = normalize(NN);
+            //vec3 L = normalize(light.pos - P);
+            vec3 L;
         
-        if(light.isDirectional)
-            L = normalize((mViewNormals * vec4(light.pos,0)).xyz);
-        else
-            L = normalize((mView * vec4(light.pos,1)).xyz - P);
+            if(light.isDirectional)
+                L = normalize((mViewNormals * vec4(light.pos,0)).xyz);
+            else
+                L = normalize((mView * vec4(light.pos,1)).xyz - P);
 
-        vec3 R = normalize (reflect(-L,N));
-        vec3 V = normalize(-P);
+            vec3 R = normalize (reflect(-L,N));
+            vec3 V = normalize(-P);
 
-        float diffuseF = max(dot(L,N), 0.0);
-        vec3 diffuse = diffuseF * dColor;
+            float diffuseF = max(dot(L,N), 0.0);
+            vec3 diffuse = diffuseF * dColor;
 
-         float specularF = pow(max(dot(R,V), 0.0), uMaterial.shininess);
-        //float specularF = pow(max(dot(N,R), 0.0), uMaterial.shininess);
-        vec3 specular = specularF * sColor;
+            float specularF = pow(max(dot(R,V), 0.0), uMaterial.shininess);
+            //float specularF = pow(max(dot(N,R), 0.0), uMaterial.shininess);
+            vec3 specular = specularF * sColor;
 
 
-        if(dot(L,N) < 0.0)
-            specular = vec3(0.0,0.0,0.0);
+            if(dot(L,N) < 0.0)
+                specular = vec3(0.0,0.0,0.0);
 
-        finalLight += aColor + diffuse + specular;
+            finalLight += aColor + diffuse + specular;
 
-        if(i == uNLights) break;
+            if(i == uNLights) break;
+        }
+
+        
     }
     return vec4(finalLight, 1.0);
 }
