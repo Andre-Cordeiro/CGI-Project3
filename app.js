@@ -1,5 +1,5 @@
 import { buildProgramFromSources, loadShadersFromURLS, setupWebGL } from "../../libs/utils.js";
-import { ortho, lookAt, flatten, vec4, mult, rotateZ, perspective, vec3, normalMatrix} from "../../libs/MV.js";
+import { ortho, lookAt, flatten, vec4, mult, rotateZ, perspective, vec3, normalMatrix, normalize} from "../../libs/MV.js";
 import {modelView, loadMatrix, multRotationY, multScale, multTranslation, popMatrix, pushMatrix, multRotationZ, multRotationX} from "../../libs/stack.js";
 
 import * as dat from "../../libs/dat.gui.module.js";
@@ -30,7 +30,7 @@ const gui2 = new dat.GUI();
 
 
 //Camera Views
-const initView = lookAt([0,0,5], [0,0,0], [0,1,0]);
+const initView = lookAt([0,3,5], [0,0,0], [0,1,0]);
 
 //let view = topView;
 //let view = axonometricView;
@@ -79,7 +79,8 @@ function setup(shaders)
     resize_canvas();
     window.addEventListener("resize", resize_canvas);
 
-    gl.clearColor(0.5, 0.5, 0.6, 1.0);
+    //gl.clearColor(0.5, 0.5, 0.6, 1.0);
+    gl.clearColor(0,0,0, 1.0);
     CUBE.init(gl);
     PYRAMID.init(gl);
     CYLINDER.init(gl);
@@ -182,7 +183,7 @@ function setup(shaders)
     }
 
     let camera = {
-        eye: vec3(0,0,5),
+        eye: vec3(0,3,5),
         at: vec3(0,0,0),
         up: vec3(0,1,0),
         fovy: 45,
@@ -329,12 +330,12 @@ function setup(shaders)
         for(let i=0;i<lights.length && showLightsMode;i++){
           pushMatrix()
             multTranslation(lights[i].pos)
-            multScale([0.2,0.2,0.2]);
+            multScale([0.1,0.1,0.1]);
             paint(vec4(lights[i].diffuse[0]/255,lights[i].diffuse[1]/255,lights[i].diffuse[2]/255,1.0));
             //console.log(lights[i].diffuse);
             //uploadModelView();
             gl.uniformMatrix4fv(gl.getUniformLocation(programLights, "mModelView"), false, flatten(modelView()));
-            SPHERE.draw(gl,programLights,gl.LINES);
+            SPHERE.draw(gl,programLights,gl);
           popMatrix()
         }
     }
@@ -350,8 +351,10 @@ function setup(shaders)
         else
             gl.disable(gl.DEPTH_TEST);
 
-        if(backFaceCullingMode)
+        if(backFaceCullingMode){
             gl.enable(gl.CULL_FACE);
+            gl.cullFace(gl.BACK)
+        }
         else
             gl.disable(gl.CULL_FACE);
        
@@ -385,7 +388,9 @@ function setup(shaders)
         gl.uniformMatrix4fv(gl.getUniformLocation(program, "mModelView"),false,flatten(modelView()));
         gl.uniformMatrix4fv(gl.getUniformLocation(program, "mNormals"),false,flatten(normalMatrix(modelView())));
         //gl.uniformMatrix4fv(gl.getUniformLocation(program, "mModelNormals"),false,flatten(normalMatrix(modelView())));
-        //gl.uniformMatrix4fv(gl.getUniformLocation(program, "mView"),false,flatten(lookAt(camera.eye,camera.at,camera.up)));
+        let mView = lookAt(camera.eye,camera.at,camera.up);
+        gl.uniformMatrix4fv(gl.getUniformLocation(program, "mView"),false,flatten(mView));
+        gl.uniformMatrix4fv(gl.getUniformLocation(program, "mViewNormals"),false,flatten(normalMatrix(modelView())));
         //gl.uniformMatrix4fv(gl.getUniformLocation(program, "mProjection"),false,flatten(perspective(camera.eye,camera.at,camera.up)));
 
         gl.uniformMatrix4fv(gl.getUniformLocation(program, "mProjection"), false, flatten(mProjection));

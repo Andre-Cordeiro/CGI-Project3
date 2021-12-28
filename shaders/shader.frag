@@ -9,6 +9,10 @@ uniform vec4 fColor;
 varying vec3 NN;
 varying vec3 posC;
 
+
+uniform mat4 mView;
+uniform mat4 mViewNormals;
+
 const int MAX_LIGHTS = 8;
 
 struct LightInfo {
@@ -48,15 +52,22 @@ vec4 calculateColor(){
 
         vec3 P = normalize(posC);
         vec3 N = normalize(NN);
-        vec3 L = normalize(light.pos - P);
+        //vec3 L = normalize(light.pos - P);
+        vec3 L;
+        
+        if(light.isDirectional)
+            L = normalize((mViewNormals * vec4(light.pos,0)).xyz);
+        else
+            L = normalize((mView * vec4(light.pos,1)).xyz - P);
+
         vec3 R = normalize (reflect(-L,N));
-        //vec3 V = normalize(-P);
+        vec3 V = normalize(-P);
 
         float diffuseF = max(dot(L,N), 0.0);
         vec3 diffuse = diffuseF * dColor;
 
-        // float specularF = pow(max(dot(R,V), 0.0), uMaterial.shininess);
-        float specularF = pow(max(dot(N,R), 0.0), uMaterial.shininess);
+         float specularF = pow(max(dot(R,V), 0.0), uMaterial.shininess);
+        //float specularF = pow(max(dot(N,R), 0.0), uMaterial.shininess);
         vec3 specular = specularF * sColor;
 
 

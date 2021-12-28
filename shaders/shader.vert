@@ -6,7 +6,7 @@ attribute vec3 vNormal;
 uniform mat4 mModelView; //mModel
 
 uniform mat4 mNormals;
-//uniform mat4 mView;
+uniform mat4 mView;
 uniform mat4 mViewNormals;
 
 varying vec3 fNormal;
