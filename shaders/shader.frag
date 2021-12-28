@@ -50,10 +50,12 @@ vec4 calculateColor(){
         vec3 N = normalize(NN);
         vec3 L = normalize(light.pos - P);
         vec3 R = normalize (reflect(-L,N));
+        //vec3 V = normalize(-P);
 
         float diffuseF = max(dot(L,N), 0.0);
         vec3 diffuse = diffuseF * dColor;
 
+        // float specularF = pow(max(dot(R,V), 0.0), uMaterial.shininess);
         float specularF = pow(max(dot(N,R), 0.0), uMaterial.shininess);
         vec3 specular = specularF * sColor;
 

@@ -70,6 +70,7 @@ function setup(shaders)
     gl = setupWebGL(canvas);
 
     let program = buildProgramFromSources(gl, shaders["shader.vert"], shaders["shader.frag"]);
+    let programLights = buildProgramFromSources(gl, shaders["shader.vert"], shaders["shaderLight.frag"]);
 
     let mProjection = getOrthoValue();
 
@@ -108,7 +109,7 @@ function setup(shaders)
     }
 
     function getFragColorVar(){
-        return gl.getUniformLocation(program, "fColor");
+        return gl.getUniformLocation(programLights, "fColor");
     }
 
     function paint(color){
@@ -119,7 +120,7 @@ function setup(shaders)
     function drawFloor(){
         multScale([3,0.1,3]);
         multTranslation([0,-0.6,0]);
-        paint(vec4(1.0,1.0,1.0,1.0));
+        //paint(vec4(1.0,1.0,1.0,1.0));
         uploadModelView();
         CUBE.draw(gl,program,mode);
     }
@@ -214,7 +215,7 @@ function setup(shaders)
         if((nLights%3) == 0) {
 
             ambient = vec3(75,5,5);
-            diffuse = vec3(175,15,15);
+            diffuse = vec3(255,255,255);
             x = getRandom(0, 3);
             y = getRandom(-3, 0);
             z = getRandom(-3, 3);
@@ -252,10 +253,10 @@ function setup(shaders)
 
     gui2.add(gui2Parameters, "shapes", ["Cube", "Sphere", "Torus", "Pyramid", "Cylinder"]).name("Object");
     const materialGUI = gui2.addFolder("Material")
-    materialGUI.addColor(gui2Parameters,"Ka")
+    materialGUI.addColor(gui2Parameters,"Ka").listen()
     materialGUI.addColor(gui2Parameters,"Kd").listen()
-    materialGUI.addColor(gui2Parameters,"Ks")
-    materialGUI.add(gui2Parameters,"Shininess")
+    materialGUI.addColor(gui2Parameters,"Ks").listen()
+    materialGUI.add(gui2Parameters,"Shininess").listen()
     materialGUI.open()
 
 
@@ -316,21 +317,25 @@ function setup(shaders)
         positionGUI.add(light.pos, 0).name("x").listen()
         positionGUI.add(light.pos, 1).name("y").listen()
         positionGUI.add(light.pos, 2).name("z").listen()
-        positionGUI.addColor(light, "ambient")
-        positionGUI.addColor(light, "diffuse")
-        positionGUI.addColor(light, "specular")
-        positionGUI.add(light, "directional")
-        positionGUI.add(light, "active")
+        positionGUI.addColor(light, "ambient").listen()
+        positionGUI.addColor(light, "diffuse").listen()
+        positionGUI.addColor(light, "specular").listen()
+        positionGUI.add(light, "directional").listen()
+        positionGUI.add(light, "active").listen()
     }
 
     function drawLights(){
+        //gl.useProgram(programLights);
         for(let i=0;i<lights.length && showLightsMode;i++){
           pushMatrix()
             multTranslation(lights[i].pos)
             multScale([0.2,0.2,0.2]);
-            uploadModelView();
-            SPHERE.draw(gl,program,gl.LINES);
-          popMatrix  
+            paint(vec4(lights[i].diffuse[0]/255,lights[i].diffuse[1]/255,lights[i].diffuse[2]/255,1.0));
+            //console.log(lights[i].diffuse);
+            //uploadModelView();
+            gl.uniformMatrix4fv(gl.getUniformLocation(programLights, "mModelView"), false, flatten(modelView()));
+            SPHERE.draw(gl,programLights,gl.LINES);
+          popMatrix()
         }
     }
 
@@ -376,20 +381,12 @@ function setup(shaders)
         
         gl.useProgram(program);
 
-        gl.uniformMatrix4fv(gl.getUniformLocation(program, "mProjection"),false,flatten(perspective(camera.fovy,camera.aspect,camera.near,camera.far)));
+        //gl.uniformMatrix4fv(gl.getUniformLocation(program, "mProjection"),false,flatten(perspective(camera.fovy,camera.aspect,camera.near,camera.far)));
         gl.uniformMatrix4fv(gl.getUniformLocation(program, "mModelView"),false,flatten(modelView()));
         gl.uniformMatrix4fv(gl.getUniformLocation(program, "mNormals"),false,flatten(normalMatrix(modelView())));
-        gl.uniformMatrix4fv(gl.getUniformLocation(program, "mModelNormals"),false,flatten(normalMatrix(modelView())));
-        gl.uniformMatrix4fv(gl.getUniformLocation(program, "mView"),false,flatten(lookAt(camera.eye,camera.at,camera.up)));
-        gl.uniformMatrix4fv(gl.getUniformLocation(program, "mProjection"),false,flatten(perspective(camera.eye,camera.at,camera.up)));
-        
-        
-        gl.uniformMatrix4fv(gl.getUniformLocation(program, "mProjection"),false,flatten(perspective(camera.fovy,camera.aspect,camera.near,camera.far)));
-        gl.uniformMatrix4fv(gl.getUniformLocation(program, "mModelView"),false,flatten(modelView()));
-        gl.uniformMatrix4fv(gl.getUniformLocation(program, "mNormals"),false,flatten(normalMatrix(modelView())));
-        gl.uniformMatrix4fv(gl.getUniformLocation(program, "mModelNormals"),false,flatten(normalMatrix(modelView())));
-        gl.uniformMatrix4fv(gl.getUniformLocation(program, "mView"),false,flatten(lookAt(camera.eye,camera.at,camera.up)));
-        gl.uniformMatrix4fv(gl.getUniformLocation(program, "mProjection"),false,flatten(perspective(camera.eye,camera.at,camera.up)));
+        //gl.uniformMatrix4fv(gl.getUniformLocation(program, "mModelNormals"),false,flatten(normalMatrix(modelView())));
+        //gl.uniformMatrix4fv(gl.getUniformLocation(program, "mView"),false,flatten(lookAt(camera.eye,camera.at,camera.up)));
+        //gl.uniformMatrix4fv(gl.getUniformLocation(program, "mProjection"),false,flatten(perspective(camera.eye,camera.at,camera.up)));
 
         gl.uniformMatrix4fv(gl.getUniformLocation(program, "mProjection"), false, flatten(mProjection));
         gl.uniform3fv(gl.getUniformLocation(program, "uMaterial.Kd"), flatten(vec3(gui2Parameters.Kd[0]/255, gui2Parameters.Kd[1] /255,gui2Parameters.Kd[2] /255)));
@@ -411,12 +408,26 @@ function setup(shaders)
         loadMatrix(view);
 
         pushMatrix()
+        gl.uniform3fv(gl.getUniformLocation(program, "uMaterial.Kd"), flatten(vec3(0,0,1.0)));
+        gl.uniform3fv(gl.getUniformLocation(program, "uMaterial.Ka"), flatten(vec3(0,0,1)));
+        gl.uniform3fv(gl.getUniformLocation(program, "uMaterial.Ks"), flatten(vec3(0,0,1)));
+        gl.uniform1f(gl.getUniformLocation(program, "uMaterial.shininess"), 50);
         drawFloor();
         popMatrix()
 
         pushMatrix()
+        gl.uniform3fv(gl.getUniformLocation(program, "uMaterial.Kd"), flatten(vec3(gui2Parameters.Kd[0]/255, gui2Parameters.Kd[1] /255,gui2Parameters.Kd[2] /255)));
+        gl.uniform3fv(gl.getUniformLocation(program, "uMaterial.Ka"), flatten(vec3(gui2Parameters.Ka[0]/255, gui2Parameters.Ka[1] /255,gui2Parameters.Ka[2] /255)));
+        gl.uniform3fv(gl.getUniformLocation(program, "uMaterial.Ks"), flatten(vec3(gui2Parameters.Ks[0]/255, gui2Parameters.Ks[1] /255,gui2Parameters.Ks[2] /255)));
+        gl.uniform1f(gl.getUniformLocation(program, "uMaterial.shininess"), gui2Parameters.Shininess);
         drawShape(gui2Parameters);
         popMatrix()
+
+        gl.useProgram(programLights)
+
+        gl.uniformMatrix4fv(gl.getUniformLocation(programLights, "mProjection"), false, flatten(mProjection));
+        gl.uniformMatrix4fv(gl.getUniformLocation(programLights, "mModelView"),false,flatten(modelView()));
+        gl.uniformMatrix4fv(gl.getUniformLocation(programLights, "mNormals"),false,flatten(normalMatrix(modelView())));
 
         pushMatrix()
         drawLights();
@@ -431,5 +442,5 @@ function setup(shaders)
     }
 }
 
-const urls = ["shader.vert", "shader.frag"];
+const urls = ["shader.vert", "shader.frag","shaderLight.frag"];
 loadShadersFromURLS(urls).then(shaders => setup(shaders))
