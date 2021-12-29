@@ -76,10 +76,8 @@ vec4 calculateColor(){
                 specular = vec3(0.0,0.0,0.0);
 
             finalLight += aColor + diffuse + specular;
-
-            if(i == uNLights) break;
         }
-
+        if(i == uNLights) break;
         
     }
     return vec4(finalLight, 1.0);
