@@ -9,9 +9,8 @@ uniform vec4 fColor;
 varying vec3 NN;
 varying vec3 posC;
 
-
 uniform mat4 mView;
-uniform mat4 mViewNormals;
+uniform mat4 mNormals;
 
 const int MAX_LIGHTS = 8;
 
@@ -32,7 +31,6 @@ struct MaterialInfo {
 };
 
 uniform int uNLights; // Effective number of lights used
-
 uniform LightInfo uLight[MAX_LIGHTS]; // The array of lights present in the scene
 uniform MaterialInfo uMaterial;  // The material of the object being drawn
 
@@ -52,15 +50,15 @@ vec4 calculateColor(){
             sColor = light.Is * uMaterial.Ks;
 
             vec3 P = normalize(posC);
-            vec3 N = normalize(NN);
-            //vec3 L = normalize(light.pos - P);
+
             vec3 L;
         
             if(light.isDirectional)
-                L = normalize((mViewNormals * vec4(light.pos,0)).xyz);
+                L = normalize((mNormals * vec4(light.pos,0)).xyz);
             else
                 L = normalize((mView * vec4(light.pos,1)).xyz - P);
 
+            vec3 N = normalize(NN);
             vec3 R = normalize (reflect(-L,N));
             vec3 V = normalize(-P);
 
@@ -68,9 +66,7 @@ vec4 calculateColor(){
             vec3 diffuse = diffuseF * dColor;
 
             float specularF = pow(max(dot(R,V), 0.0), uMaterial.shininess);
-            //float specularF = pow(max(dot(N,R), 0.0), uMaterial.shininess);
             vec3 specular = specularF * sColor;
-
 
             if(dot(L,N) < 0.0)
                 specular = vec3(0.0,0.0,0.0);
@@ -87,6 +83,4 @@ vec4 calculateColor(){
 
 void main() {
     gl_FragColor = calculateColor();
-    //gl_FragColor = vec4(uMaterial.Kd,1.0);
-    //vec3 c = fNormal + vec3(1.0,1.0,1.0);
 }
