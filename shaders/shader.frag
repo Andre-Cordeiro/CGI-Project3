@@ -30,9 +30,12 @@ struct MaterialInfo {
     float shininess;
 };
 
-uniform int uNLights; // Effective number of lights used
-uniform LightInfo uLight[MAX_LIGHTS]; // The array of lights present in the scene
-uniform MaterialInfo uMaterial;  // The material of the object being drawn
+/** Effective number of lights used */
+uniform int uNLights; 
+/** The array of lights present in the scene */
+uniform LightInfo uLight[MAX_LIGHTS];
+/** The material of the object being drawn */
+uniform MaterialInfo uMaterial;
 
 vec4 calculateColor(){
 
@@ -78,8 +81,6 @@ vec4 calculateColor(){
     }
     return vec4(finalLight, 1.0);
 }
-
-
 
 void main() {
     gl_FragColor = calculateColor();

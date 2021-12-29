@@ -1,6 +1,6 @@
 import { buildProgramFromSources, loadShadersFromURLS, setupWebGL } from "../../libs/utils.js";
-import { ortho, lookAt, flatten, vec4, mult, rotateZ, perspective, vec3, normalMatrix} from "../../libs/MV.js";
-import {modelView, loadMatrix, multRotationY, multScale, multTranslation, popMatrix, pushMatrix} from "../../libs/stack.js";
+import { ortho, lookAt, flatten, vec4, perspective, vec3, normalMatrix} from "../../libs/MV.js";
+import {modelView, loadMatrix, multScale, multTranslation, popMatrix, pushMatrix} from "../../libs/stack.js";
 
 import * as dat from "../../libs/dat.gui.module.js";
 
@@ -14,26 +14,25 @@ import * as TORUS from '../../libs/torus.js';
 
 /** @type WebGLRenderingContext */
 let gl;
-let mode;      
-let animation = true;
+let mode;
 let VP_DISTANCE = 5;
 
-//Interfaces
+/** Interfaces */
 const gui = new dat.GUI();
 const gui2 = new dat.GUI();
 
 
-//Camera Views
+/**Camera Views */
 const initView = lookAt([0,0,5], [0,0,0], [0,1,0]);
 let view = initView;
 const zoom = 1.5;
 
-//Modes
+/** Light Modes */
 var zBufferMode;
 var backFaceCullingMode;
 var showLightsMode;
 
-//Floor Constants
+/** Floor Constants */
 const floorTransX = 0;
 const floorTransY = -1;
 const floorTransZ = 0;
@@ -45,13 +44,13 @@ const floorKa = vec3(0,0,1);
 const floorKs = vec3(0,0,1);
 const floorShininess = 50;
 
-//Shape Constants
+/** Shape Constants */
 const shapeTransX = 0;
 const shapeTransY= 0.5;
 const shapeTransZ = 0;
 const shapeScale = 1;
 
-//Kind of Shapes
+/** Kinds of Shapes */
 const CUBE_SOLID = "Cube";
 const SPHERE_SOLID = "Sphere";
 const TORUS_SOLID = "Torus"; 
@@ -59,8 +58,9 @@ const PYRAMID_SOLID = "Pyramid";
 const CYLINDER_SOLID = "Cylinder";
 const UNKNOWNSHAPE = "Undenifed shape.";
 
-
+/** Maximum number of lights*/
 const MAX_LIGHTS = 8;
+/** Array of lights */
 let lights = [];
 
 
@@ -72,7 +72,9 @@ function setup(shaders)
 
     gl = setupWebGL(canvas);
 
+    /** Main program that deals with most things */
     let program = buildProgramFromSources(gl, shaders["shader.vert"], shaders["shader.frag"]);
+    /** Program that deals with the coloring of the light sphere's */
     let programLights = buildProgramFromSources(gl, shaders["shader.vert"], shaders["shaderLight.frag"]);
 
     let mProjection = getOrthoValue();
@@ -120,6 +122,9 @@ function setup(shaders)
         gl.uniform4fv(colorVar, color);
     }
 
+    /**
+     * Draws the floor of the scene
+     */
     function drawFloor(){
         multScale([floorScaleX,floorScaleY,floorScaleZ]);
         multTranslation([floorTransX,floorTransY,floorTransZ]);
@@ -127,6 +132,9 @@ function setup(shaders)
         CUBE.draw(gl,program,mode);
     }
 
+    /**
+     * Draws the choosen object
+     */
     function drawShape(material){
         multScale([shapeScale,shapeScale,shapeScale]);
         multTranslation([shapeTransX, shapeTransY, shapeTransZ]);
@@ -146,7 +154,10 @@ function setup(shaders)
         }
     }
 
-
+    /**
+     * The following five functions deal updating certain values 
+     * regarding changes made by the user
+     */
     function updateLookAt(){
         view = lookAt(camera.eye, camera.at, camera.up);
     }
@@ -167,34 +178,22 @@ function setup(shaders)
         showLightsMode = options["show lights"];
     }
 
-    let material = {
-        shapes: "Torus",
-        Ka: vec3(0,25,0),
-        Kd: vec3(0,100,0),
-        Ks: vec3(255,255,255),
-        Shininess: 50
-    }
-
-    let options = {
-        "backface culling": true,
-        "depth test": true,
-        "show lights": true,
-    }
-
-    let camera = {
-        eye: vec3(0,0,5),
-        at: vec3(0,0,0),
-        up: vec3(0,1,0),
-        fovy: 45,
-        near: 0.1,
-        far: 20,
-    }
-    
-
+    /**
+     * Generates a random float within a specific interval
+     * @param {*} min - minimum value of the interval
+     * @param {*} max - maximum value of the interval
+     * @returns float
+     */
     function getRandom(min, max) {
         return Math.random() * (max - min) + min;
     }
 
+    /**
+     * Creates a new light
+     * Its position (apart from the first light, which spawns
+     * at the start in order to be able to view the object correctly)
+     * is random, as its color will be either blue, red or green.
+     */
     function generateLight(){
 
         const nLights = lights.length;
@@ -240,7 +239,6 @@ function setup(shaders)
         directional = false;
         active = true;
 
-        console.log(" x: " + x + " y: " + y + " z: "+ z);
         return {
             ambient, 
             diffuse, 
@@ -249,6 +247,31 @@ function setup(shaders)
             active, 
             directional
         }
+    }
+
+    /**Portion of code regarding the interface of the program */
+
+    let material = {
+        shapes: "Torus",
+        Ka: vec3(0,25,0),
+        Kd: vec3(0,100,0),
+        Ks: vec3(255,255,255),
+        Shininess: 50
+    }
+
+    let options = {
+        "backface culling": true,
+        "depth test": true,
+        "show lights": true,
+    }
+
+    let camera = {
+        eye: vec3(0,0,5),
+        at: vec3(0,0,0),
+        up: vec3(0,1,0),
+        fovy: 45,
+        near: 0.1,
+        far: 20,
     }
 
     gui2.add(material, "shapes", [CUBE_SOLID, SPHERE_SOLID, TORUS_SOLID, PYRAMID_SOLID, CYLINDER_SOLID]).name("Object");
@@ -295,7 +318,7 @@ function setup(shaders)
     upGUI.open()
 
 
-    //Code for every added Light!
+    /** Code for every added Light*/
     const lightsFolder = gui.addFolder("Lights")
     lightsFolder.add({nOfLights: 0, buttonAddLight: addLight }, "buttonAddLight").name("Add New Light");
 
@@ -306,7 +329,7 @@ function setup(shaders)
             const light = generateLight();
             lights.push(light);
 
-            // add light to the folder
+            //* Adds light to the folder */
             const index = lights.length - 1;
             const lightGUI = lightsFolder.addFolder("Light"+ index);
             const positionGUI = lightGUI.addFolder("position")
@@ -321,6 +344,9 @@ function setup(shaders)
         }
     }
 
+    /**
+     * Draws the light spheres
+     */
     function drawLights(){
         for(let i=0;i<lights.length && showLightsMode;i++){
           pushMatrix()
@@ -348,26 +374,23 @@ function setup(shaders)
             gl.disable(gl.CULL_FACE);
 
         if(lights.length == 0){
-            console.log("was: " + lights.length);
             addLight();
-            console.log("is: " + lights.length);
         }
        
-        //Updates the fovy
+        /** Updates the fovy*/
         updateFovy();
 
-        //Updates the eye, at and up
+        /** Updates the eye, at and up */
         updateLookAt();
 
-        //Updates Backface Culling
+        /** Updates Backface Culling */
         updateBackfaceCulling();
 
-        //Updated ZBuffer
+        /** Updated ZBuffer */
         updateZBuffer();
 
-        //Update showLights
+        /** Update showLights */
         updateShowLights();
-
 
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         
@@ -379,7 +402,7 @@ function setup(shaders)
         gl.uniformMatrix4fv(gl.getUniformLocation(program, "mView"),false,flatten(mView));
         gl.uniformMatrix4fv(gl.getUniformLocation(program, "mProjection"), false, flatten(mProjection));
 
-        //Passes the information about all lights to the shader fragment
+        /** Passes the information about all lights to the shader fragment */
         gl.uniform1i(gl.getUniformLocation(program,"uNLights"),lights.length);
         for(let i=0;i<lights.length;i++){
             gl.uniform3fv(gl.getUniformLocation(program, "uLight["+i+"].pos"),flatten(lights[i].pos));
@@ -392,7 +415,7 @@ function setup(shaders)
         
         loadMatrix(view);
 
-        //Draws the Floor and passes information about the floort to the fragment shader
+        /** Draws the Floor and passes information about the floor to the fragment shader */
         gl.uniform3fv(gl.getUniformLocation(program, "uMaterial.Kd"), flatten(floorKd));
         gl.uniform3fv(gl.getUniformLocation(program, "uMaterial.Ka"), flatten(floorKa));
         gl.uniform3fv(gl.getUniformLocation(program, "uMaterial.Ks"), flatten(floorKs));
@@ -401,7 +424,7 @@ function setup(shaders)
         drawFloor();
         popMatrix()
 
-        //Draws the Shape and passes the information about the shape properties defined by the user.
+        /** Draws the Shape and passes the information about the shape properties defined by the user */
         gl.uniform3fv(gl.getUniformLocation(program, "uMaterial.Kd"), flatten(vec3(material.Kd[0]/255, material.Kd[1] /255,material.Kd[2] /255)));
         gl.uniform3fv(gl.getUniformLocation(program, "uMaterial.Ka"), flatten(vec3(material.Ka[0]/255, material.Ka[1] /255,material.Ka[2] /255)));
         gl.uniform3fv(gl.getUniformLocation(program, "uMaterial.Ks"), flatten(vec3(material.Ks[0]/255, material.Ks[1] /255,material.Ks[2] /255)));
